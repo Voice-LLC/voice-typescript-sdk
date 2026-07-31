@@ -1,0 +1,12 @@
+version: v2
+inputs:
+  - directory: proto
+plugins:
+  # Generates messages, enums, and service descriptors as TypeScript.
+  # createClient() from @connectrpc/connect consumes these descriptors directly —
+  # protobuf-es v2 needs no separate connect plugin.
+  - local: protoc-gen-es
+    out: src/gen
+    opt:
+      - target=ts
+      - import_extension=js

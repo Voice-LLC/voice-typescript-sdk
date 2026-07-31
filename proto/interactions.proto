@@ -1,0 +1,166 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common.proto";
+
+option csharp_namespace = "Vc.Backend.WebApi.Interactions.Grpc";
+
+package interactions;
+
+// Discord-style Interactions API: владелец регистрирует slash-команды бота (CRUD), участники группы
+// исполняют их / кликают компоненты бота / отправляют модалки - каждый такой вызов создаёт короткоживущий
+// interaction, доставляется боту через /hubs/bots (Vc.Backend.WebApi.Bots.Consumer) и ждёт ответа
+// (см. Actors/InteractionActor.cs).
+service InteractionsApi {
+  rpc RegisterCommand (RegisterCommandRequest) returns (BotCommand);
+  rpc UpdateCommand (UpdateCommandRequest) returns (BotCommand);
+  rpc DeleteCommand (DeleteCommandRequest) returns (google.protobuf.Empty);
+  rpc GetBotCommands (GetBotCommandsRequest) returns (GetBotCommandsResponse);
+
+  // Commands from every bot member of the group in one call, instead of listing group members and
+  // calling GetBotCommands per bot. Any group member can call this (membership check happens in
+  // Groups, same as ExecuteCommand/etc. below) - BotCommand.bot_id disambiguates per-bot.
+  rpc GetGroupCommands (GetGroupCommandsRequest) returns (GetBotCommandsResponse);
+
+  rpc ExecuteCommand (ExecuteCommandRequest) returns (InteractionResult);
+  rpc RequestAutocomplete (RequestAutocompleteRequest) returns (AutocompleteResult);
+  rpc InvokeMessageComponent (InvokeMessageComponentRequest) returns (InteractionResult);
+  rpc SubmitModal (SubmitModalRequest) returns (InteractionResult);
+}
+
+enum CommandOptionType {
+  STRING = 0;
+  INTEGER = 1;
+  BOOLEAN = 2;
+  USER = 3;
+  CHANNEL = 4;
+  ROLE = 5;
+  NUMBER = 6;
+  SUB_COMMAND = 7;
+  SUB_COMMAND_GROUP = 8;
+}
+
+message CommandOptionChoice {
+  string name = 1;
+  string value = 2;
+}
+
+message CommandOption {
+  string name = 1;
+  string description = 2;
+  CommandOptionType type = 3;
+  bool required = 4;
+  repeated CommandOptionChoice choices = 5;
+  // Опция запрашивает динамические choices у бота по мере ввода (RequestAutocomplete), а не
+  // использует статичный список choices выше.
+  bool autocomplete = 6;
+}
+
+message BotCommand {
+  string id = 1;
+  string bot_id = 2;
+  string name = 3;
+  string description = 4;
+  repeated CommandOption options = 5;
+  uint64 default_member_permissions = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message RegisterCommandRequest {
+  string bot_id = 1;
+  string name = 2;
+  string description = 3;
+  repeated CommandOption options = 4;
+  uint64 default_member_permissions = 5;
+}
+
+message UpdateCommandRequest {
+  string bot_id = 1;
+  string command_id = 2;
+  string name = 3;
+  string description = 4;
+  repeated CommandOption options = 5;
+  uint64 default_member_permissions = 6;
+}
+
+message DeleteCommandRequest {
+  string bot_id = 1;
+  string command_id = 2;
+}
+
+message GetBotCommandsRequest {
+  string bot_id = 1;
+}
+
+message GetGroupCommandsRequest {
+  string group_id = 1;
+}
+
+message GetBotCommandsResponse {
+  repeated BotCommand commands = 1;
+}
+
+message CommandOptionValue {
+  string name = 1;
+  string value = 2;
+}
+
+message ExecuteCommandRequest {
+  string bot_id = 1;
+  string command_id = 2;
+  string channel_id = 3;
+  optional string group_id = 4;
+  repeated CommandOptionValue options = 5;
+}
+
+message RequestAutocompleteRequest {
+  string bot_id = 1;
+  string command_id = 2;
+  string channel_id = 3;
+  optional string group_id = 4;
+  string focused_option = 5;
+  repeated CommandOptionValue options = 6;
+}
+
+message InvokeMessageComponentRequest {
+  string bot_id = 1;
+  string message_id = 2;
+  string channel_id = 3;
+  optional string group_id = 4;
+  string custom_id = 5;
+  repeated string values = 6;
+}
+
+message SubmitModalRequest {
+  string bot_id = 1;
+  string channel_id = 2;
+  optional string group_id = 3;
+  string custom_id = 4;
+  repeated CommandOptionValue fields = 5;
+}
+
+enum InteractionResponseType {
+  CHANNEL_MESSAGE = 0;
+  DEFERRED_CHANNEL_MESSAGE = 1;
+  UPDATE_MESSAGE = 2;
+  DEFERRED_UPDATE_MESSAGE = 3;
+  MODAL = 4;
+}
+
+message InteractionResult {
+  InteractionResponseType type = 1;
+  string content = 2;
+  // JSON ActionRow[] (кнопки/select-меню) - см. doc-комментарий InteractionActor: компоненты и
+  // модалки моделируются гибким JSON, а не десятком отдельных protobuf-message на каждый визуальный
+  // Discord-тип.
+  string components_json = 3;
+  string modal_json = 4;
+  bool ephemeral = 5;
+  optional string message_id = 6;
+}
+
+message AutocompleteResult {
+  repeated CommandOptionChoice choices = 1;
+}

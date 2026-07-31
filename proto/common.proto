@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Vc.Backend.Contracts.Grpc";
+
+package common;
+
+enum UserStatus {
+  ONLINE = 0;
+  OFFLINE = 1;
+  DO_NOT_DISTURB = 2;
+  INVISIBLE = 3;
+}
+
+enum BotType {
+  BOT = 0;
+  AGENT = 1;
+}
+
+enum AiProviders {
+  OPENAI = 0;
+  ANTHROPIC = 1;
+  GOOGLE = 2;
+  DEEPSEEK = 3;
+  MISTRAL = 4;
+  KIMI = 5;
+}
+
+// Discord/Claude-style "what the bot is doing right now" reactive status, distinct from the plain
+// on/off UserTyping - see BotsApi.SetTyping.
+enum BotTypingState {
+  THINKING = 0;
+  EXPLORED = 1;
+  PROCESSING = 2;
+  REVIEWED = 3;
+  OPENED = 4;
+  RE_SEARCH = 5;
+  FETCHED = 6;
+}
+
+message User {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  string display_name = 4;
+  string description = 5;
+  string status = 6;
+  string preferred_language = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  google.protobuf.Timestamp last_activity = 10;
+  bool is_confirmed = 11;
+  bool is_bot = 12;
+  string subscription_type = 13;
+  string avatar_id = 14;
+  string banner_id = 15;
+  UserStatus user_status = 16;
+}
+
+message Bot {
+  string id = 1;
+  string owner_id = 2;
+  string username = 3;
+  string display_name = 4;
+  string description = 5;
+  string avatar_id = 6;
+  common.UserStatus user_status = 7;
+  common.BotType type = 8;
+  bool is_enabled = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp updated_at = 11;
+  // Discord-style Gateway Intents bitmask granted to the bot by its owner — see
+  // Vc.Common.Types.BotIntents. Replaces the old string-set "scopes".
+  uint64 intents = 12;
+}
+
+message AgentCredential {
+  common.AiProviders provider = 1;
+  string model_name = 2;
+  optional string organization_id = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+  google.protobuf.Timestamp last_used_at = 6;
+}
