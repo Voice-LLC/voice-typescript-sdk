@@ -1,1 +1,6 @@
-export type { GatewayMessage, MessageAttachment, MessageAuthor, GatewayGroupPayload } from "./gateway-message";
+export type {
+  GatewayGroupPayload,
+  GatewayMessage,
+  MessageAttachment,
+  MessageAuthor,
+} from "./gateway-message";

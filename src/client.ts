@@ -1,9 +1,9 @@
+import type { UpdateContext } from "./context";
 import { Context } from "./context";
-import type{ UpdateContext } from "./context";
 import type { Gateway } from "./gateway";
 import { SignalRGateway } from "./gateway";
-import { GrpcBotsTransport } from "./transport";
 import type { Transport } from "./transport";
+import { GrpcBotsTransport } from "./transport";
 import type { ClientConfig, ClientOptions } from "./types";
 import { createClientConfigOptions } from "./utils";
 
@@ -25,6 +25,15 @@ export class Client {
     this.gateway = gateway;
   }
 
+  async init(): Promise<void> {
+    const gateway = (this.gateway ??= new SignalRGateway(this.options));
+    gateway.onUpdate((update) => {
+      void this.dispatch(update).catch((error) => this.emitError(error));
+    });
+    gateway.onError((error) => this.emitError(error));
+    await gateway.start();
+  }
+
   match(matcher: Matcher, handler: MatchHandler): this {
     this.matches.set(matcher, handler);
     return this;
@@ -33,15 +42,6 @@ export class Client {
   onError(handler: (error: Error) => void): this {
     this.onClientErrorHandler = handler;
     return this;
-  }
-
-  async init(): Promise<void> {
-    const gateway = (this.gateway ??= new SignalRGateway(this.options));
-    gateway.onUpdate((update) => {
-      void this.dispatch(update).catch((error) => this.emitError(error));
-    });
-    gateway.onError((error) => this.emitError(error));
-    await gateway.start();
   }
 
   async stop(): Promise<void> {

@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { createFakeTransport, createUpdate } from "./helpers/fake-transport";
 
 import { Context } from "../src/context";
-import type { Transport } from "../src/transport";
 import type { GatewayMessage } from "../src/events";
-import { createFakeTransport, createUpdate } from "./helpers/fake-transport";
+import type { Transport } from "../src/transport";
 
 describe("Context", () => {
   let transport: Transport;
@@ -37,19 +38,13 @@ describe("Context", () => {
     });
 
     it("exposes the author id", () => {
-      const withAuthorId = new Context(
-        createUpdate({ authorId: "author-1" }),
-        transport,
-      );
+      const withAuthorId = new Context(createUpdate({ authorId: "author-1" }), transport);
       expect(withAuthorId.authorId).toBe("author-1");
     });
 
     it("exposes attachments", () => {
       const attachment = { id: "att-1" } as GatewayMessage["attachments"][number];
-      const withAttachment = new Context(
-        createUpdate({ attachments: [attachment] }),
-        transport,
-      );
+      const withAttachment = new Context(createUpdate({ attachments: [attachment] }), transport);
       expect(withAttachment.attachments).toEqual([attachment]);
     });
 
@@ -62,10 +57,7 @@ describe("Context", () => {
     });
 
     it("exposes the reply target", () => {
-      const reply = new Context(
-        createUpdate({ replyTo: "msg-0" }),
-        transport,
-      );
+      const reply = new Context(createUpdate({ replyTo: "msg-0" }), transport);
       expect(reply.replyTo).toBe("msg-0");
     });
 
@@ -96,10 +88,7 @@ describe("Context", () => {
     });
 
     it("reports not-an-interaction when interactionId is null", () => {
-      const plain = new Context(
-        createUpdate({ interactionId: null }),
-        transport,
-      );
+      const plain = new Context(createUpdate({ interactionId: null }), transport);
       expect(plain.isInteraction).toBe(false);
     });
   });

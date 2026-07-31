@@ -1,11 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import {
-  createClientConfigOptions,
-  createGatewayUrl,
-  camelizeKeys,
-  parseJson,
-} from "../src/utils";
+import { camelizeKeys, createClientConfigOptions, createGatewayUrl, parseJson } from "../src/utils";
 
 describe("createClientConfigOptions", () => {
   it("normalizes a bare token string into an options object", () => {

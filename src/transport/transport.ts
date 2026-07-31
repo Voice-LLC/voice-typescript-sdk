@@ -2,54 +2,54 @@ import type { MessageInitShape } from "@bufbuild/protobuf";
 import type { EmptySchema } from "@bufbuild/protobuf/wkt";
 
 import type {
-  MessageInfo,
-  BotGroupDetails,
-  GetGroupUsersResponse,
-  GetGroupRolesResponse,
-  BotChannelDetails,
   BotCategoryInfo,
+  BotChannelDetails,
   BotChannelInfo,
-  BotRole
+  BotGroupDetails,
+  BotRole,
+  GetGroupRolesResponse,
+  GetGroupUsersResponse,
+  MessageInfo,
 } from "../gen/bots_pb";
 import {
-  SendMessageRequestSchema,
-  UpdateMessageRequestSchema,
-  DeleteMessageRequestSchema,
-  DeleteMessageResponseSchema,
-  TypingRequestSchema,
+  BotCategoryInfoSchema,
+  BotChannelInfoSchema,
   BotTypingRequestSchema,
-  ReactionRequestSchema,
-  JoinVoiceChannelRequestSchema,
-  JoinVoiceChannelResponseSchema,
-  LeaveVoiceChannelRequestSchema,
-  GetGroupRequestSchema,
-  GetGroupUsersRequestSchema,
-  GetGroupRolesRequestSchema,
-  GetChannelRequestSchema,
   CreateCategoryRequestSchema,
   CreateChannelRequestSchema,
   CreateRoleRequestSchema,
-  UpdateRoleRequestSchema,
-  DeleteRoleRequestSchema,
-  RoleAssignmentRequestSchema,
-  GetMyGroupsResponseSchema,
-  GetGroupCategoriesResponseSchema,
-  UpdateCategoryRequestSchema,
-  UpdateChannelRequestSchema,
+  DeleteCategoryRequestSchema,
+  DeleteCategoryResponseSchema,
   DeleteChannelRequestSchema,
   DeleteChannelResponseSchema,
+  DeleteMessageRequestSchema,
+  DeleteMessageResponseSchema,
+  DeleteRoleRequestSchema,
   GetCategoryRequestSchema,
-  BotCategoryInfoSchema,
-  BotChannelInfoSchema,
-  DeleteCategoryResponseSchema,
-  DeleteCategoryRequestSchema,
-  SetStatusRequestSchema,
-  KickUserRequestSchema,
-  KickUserResponseSchema,
-  GetUserRequestSchema,
   GetChannelMessagesRequestSchema,
   GetChannelMessagesResponseSchema,
+  GetChannelRequestSchema,
+  GetGroupCategoriesResponseSchema,
   GetGroupChannelsResponseSchema,
+  GetGroupRequestSchema,
+  GetGroupRolesRequestSchema,
+  GetGroupUsersRequestSchema,
+  GetMyGroupsResponseSchema,
+  GetUserRequestSchema,
+  JoinVoiceChannelRequestSchema,
+  JoinVoiceChannelResponseSchema,
+  KickUserRequestSchema,
+  KickUserResponseSchema,
+  LeaveVoiceChannelRequestSchema,
+  ReactionRequestSchema,
+  RoleAssignmentRequestSchema,
+  SendMessageRequestSchema,
+  SetStatusRequestSchema,
+  TypingRequestSchema,
+  UpdateCategoryRequestSchema,
+  UpdateChannelRequestSchema,
+  UpdateMessageRequestSchema,
+  UpdateRoleRequestSchema,
 } from "../gen/bots_pb";
 import type { BotSchema, UserSchema } from "../gen/common_pb.ts";
 
@@ -68,7 +68,7 @@ export type ProfileTransport = {
   getUser(params: GetUserParams): Promise<GetUserResult>;
   setStatus(params: SetStatusParams): Promise<SetStatusResult>;
   kickUser(params: KickUserParams): Promise<KickUserResult>;
-}
+};
 
 // Сообщения
 export type SendMessageParams = MessageInitShape<typeof SendMessageRequestSchema>;
@@ -92,7 +92,7 @@ export type MessageTransport = {
   setTyping(params: SetTypingParams): Promise<SetTypingResult>;
   addReaction(params: ReactionParams): Promise<ReactionResult>;
   removeReaction(params: ReactionParams): Promise<ReactionResult>;
-}
+};
 
 // Голос
 export type JoinVoiceChannelParams = MessageInitShape<typeof JoinVoiceChannelRequestSchema>;
@@ -102,7 +102,7 @@ export type LeaveVoiceChannelResult = MessageInitShape<typeof EmptySchema>;
 export type VoiceTransport = {
   joinVoiceChannel(params: JoinVoiceChannelParams): Promise<JoinVoiceChannelResult>;
   leaveVoiceChannel(params: LeaveVoiceChannelParams): Promise<LeaveVoiceChannelResult>;
-}
+};
 
 // Группы, каналы и роли (intent Guilds)
 export type GetMyGroupsResult = MessageInitShape<typeof GetMyGroupsResponseSchema>;
@@ -167,8 +167,11 @@ export type GroupOrChannelOrRolesTransport = {
   deleteRole(params: DeleteGroupRoleParams): Promise<DeleteGroupRoleResult>;
   assignRole(params: RoleAssignmentParams): Promise<RoleAssignmentResult>;
   removeRole(params: RoleAssignmentParams): Promise<RoleAssignmentResult>;
-}
+};
 
-export type Transport = ProfileTransport & MessageTransport & VoiceTransport & GroupOrChannelOrRolesTransport
+export type Transport = ProfileTransport &
+  MessageTransport &
+  VoiceTransport &
+  GroupOrChannelOrRolesTransport;
 
 export type { MessageInfo };

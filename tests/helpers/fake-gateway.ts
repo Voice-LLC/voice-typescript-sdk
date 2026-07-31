@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 
-import type { Gateway, GatewayUpdateHandler, GatewayErrorHandler } from "../../src/gateway";
+import type { Gateway, GatewayErrorHandler, GatewayUpdateHandler } from "../../src/gateway";
 
 export class FakeGateway implements Gateway {
   start = vi.fn(async () => {});

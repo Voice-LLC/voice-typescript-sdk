@@ -1,11 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { FakeGateway } from "./helpers/fake-gateway";
+import { createFakeTransport, createUpdate } from "./helpers/fake-transport";
 
 import { Client, createClient } from "../src";
-import { Context } from "../src/context";
 import type { UpdateContext } from "../src/context";
+import { Context } from "../src/context";
 import type { Transport } from "../src/transport";
-import { createFakeTransport, createUpdate } from "./helpers/fake-transport";
-import { FakeGateway } from "./helpers/fake-gateway";
 
 const options = { token: "tok", baseUrl: "https://api.voice.dev" };
 

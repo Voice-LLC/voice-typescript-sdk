@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { GatewayTopics, ALL_GATEWAY_TOPICS } from "../../src/gateway";
+import { ALL_GATEWAY_TOPICS, GatewayTopics } from "../../src/gateway";
 
 describe("GatewayTopics", () => {
   it("exposes the expected topic names", () => {

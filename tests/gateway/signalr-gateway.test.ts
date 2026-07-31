@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const connection = {
   handlers: new Map<string, (envelope: unknown) => void>(),
@@ -123,9 +123,7 @@ describe("SignalRGateway", () => {
 
       // The synchronous throw inside handleEvent must be caught and re-emitted,
       // never allowed to escape the topic callback.
-      expect(() =>
-        connection.handlers.get(GatewayTopics.chatEvents)!(chatEnvelope),
-      ).not.toThrow();
+      expect(() => connection.handlers.get(GatewayTopics.chatEvents)!(chatEnvelope)).not.toThrow();
       expect(onError).toHaveBeenCalledWith(boom);
     });
 

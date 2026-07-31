@@ -49,7 +49,6 @@ export interface GatewayMessage {
   attachments: MessageAttachment[];
 }
 
-
 export interface GatewayGroupPayload {
   messageId?: string | undefined;
   chatId?: string | undefined;

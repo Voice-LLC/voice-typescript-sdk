@@ -1,10 +1,14 @@
-import type { UpdateContext } from "../context";
-import { camelizeKeys, parseJson } from "../utils";
 import type { GatewayTopic } from "./gateway-topics";
 import { GatewayTopics } from "./gateway-topics";
-import type { GatewayMessage, GatewayGroupPayload } from "../events";
 
-export function createUpdateContext(topic: GatewayTopic, payloadRaw: unknown): UpdateContext | null {
+import type { UpdateContext } from "../context";
+import type { GatewayGroupPayload, GatewayMessage } from "../events";
+import { camelizeKeys, parseJson } from "../utils";
+
+export function createUpdateContext(
+  topic: GatewayTopic,
+  payloadRaw: unknown,
+): UpdateContext | null {
   if (topic !== GatewayTopics.chatEvents) {
     return null;
   }

@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { createUpdateContext, GatewayTopics } from "../../src/gateway";
+import { GatewayTopics, createUpdateContext } from "../../src/gateway";
 
 function envelope(type: string, payload: unknown) {
   return {
@@ -35,19 +35,13 @@ describe("createUpdateContext", () => {
 
   it("returns null for non-chat topics", () => {
     expect(
-      createUpdateContext(
-        GatewayTopics.groupEvents,
-        envelope("MessageCreated", messagePayload),
-      ),
+      createUpdateContext(GatewayTopics.groupEvents, envelope("MessageCreated", messagePayload)),
     ).toBeNull();
   });
 
   it("returns null for a non-MessageCreated event type", () => {
     expect(
-      createUpdateContext(
-        GatewayTopics.chatEvents,
-        envelope("MessageUpdated", messagePayload),
-      ),
+      createUpdateContext(GatewayTopics.chatEvents, envelope("MessageUpdated", messagePayload)),
     ).toBeNull();
   });
 
@@ -70,9 +64,7 @@ describe("createUpdateContext", () => {
   });
 
   it("returns null when the envelope carries no payloadJson", () => {
-    expect(
-      createUpdateContext(GatewayTopics.chatEvents, { type: "MessageCreated" }),
-    ).toBeNull();
+    expect(createUpdateContext(GatewayTopics.chatEvents, { type: "MessageCreated" })).toBeNull();
   });
 
   it("returns null for a null envelope", () => {

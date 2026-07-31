@@ -1,8 +1,8 @@
 import { vi } from "vitest";
 
 import type { UpdateContext } from "../../src/context";
-import type { Transport } from "../../src/transport";
 import type { GatewayMessage } from "../../src/events";
+import type { Transport } from "../../src/transport";
 
 export function createFakeTransport(): Transport {
   const echo = () => vi.fn(async (params?: unknown) => params ?? {});

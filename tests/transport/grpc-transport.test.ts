@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const clientStub = {
   getMe: vi.fn(async (m: unknown) => m),
@@ -47,6 +47,7 @@ vi.mock("@connectrpc/connect-node", () => ({
 }));
 
 import { createClient } from "@connectrpc/connect";
+
 import { GrpcBotsTransport } from "../../src/transport/grpc-transport";
 
 const options = { token: "secret-token", baseUrl: "https://api.voice.dev" };

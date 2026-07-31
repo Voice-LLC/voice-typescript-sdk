@@ -10,7 +10,6 @@ export function createClientConfigOptions(config: ClientConfig): ClientOptions {
   return { ...options };
 }
 
-
 export function createGatewayUrl(options: ClientOptions): string {
   if (!options.baseUrl) {
     throw new Error("Voice Client: `baseUrl` is required for the gateway.");
