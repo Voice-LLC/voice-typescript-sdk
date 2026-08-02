@@ -13,7 +13,7 @@
   "author": "Scondic <scondic@icloud.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/myorg/voice-client.git"
+    "url": "git+https://github.com/Voice-LLC/voice-typescript-sdk"
   },
   "files": [
     "dist",
