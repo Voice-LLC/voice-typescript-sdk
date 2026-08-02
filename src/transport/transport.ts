@@ -41,8 +41,11 @@ import {
   KickUserRequestSchema,
   KickUserResponseSchema,
   LeaveVoiceChannelRequestSchema,
+  MessageInfoSchema,
   ReactionRequestSchema,
+  RespondToInteractionRequestSchema,
   RoleAssignmentRequestSchema,
+  SendInteractionFollowupRequestSchema,
   SendMessageRequestSchema,
   SetStatusRequestSchema,
   TypingRequestSchema,
@@ -52,6 +55,13 @@ import {
   UpdateRoleRequestSchema,
 } from "../gen/bots_pb";
 import type { BotSchema, UserSchema } from "../gen/common_pb.ts";
+import type { BotCommand, GetBotCommandsResponse } from "../gen/interactions_pb";
+import {
+  DeleteCommandRequestSchema,
+  GetBotCommandsRequestSchema,
+  RegisterCommandRequestSchema,
+  UpdateCommandRequestSchema,
+} from "../gen/interactions_pb";
 
 // Профиль и статус
 export type GetMeParams = MessageInitShape<typeof EmptySchema>;
@@ -169,9 +179,36 @@ export type GroupOrChannelOrRolesTransport = {
   removeRole(params: RoleAssignmentParams): Promise<RoleAssignmentResult>;
 };
 
+export type RespondToInteractionParams = MessageInitShape<typeof RespondToInteractionRequestSchema>;
+export type RespondToInteractionResult = MessageInitShape<typeof EmptySchema>;
+export type SendInteractionFollowupParams = MessageInitShape<
+  typeof SendInteractionFollowupRequestSchema
+>;
+export type SendInteractionFollowupResult = MessageInitShape<typeof MessageInfoSchema>;
+export type RegisterCommandParams = MessageInitShape<typeof RegisterCommandRequestSchema>;
+export type RegisterCommandResult = BotCommand;
+export type UpdateCommandParams = MessageInitShape<typeof UpdateCommandRequestSchema>;
+export type UpdateCommandResult = BotCommand;
+export type DeleteCommandParams = MessageInitShape<typeof DeleteCommandRequestSchema>;
+export type DeleteCommandResult = MessageInitShape<typeof EmptySchema>;
+export type GetBotCommandsParams = MessageInitShape<typeof GetBotCommandsRequestSchema>;
+export type GetBotCommandsResult = GetBotCommandsResponse;
+
+export type InteractionsTransport = {
+  respondToInteraction(params: RespondToInteractionParams): Promise<RespondToInteractionResult>;
+  sendInteractionFollowup(
+    params: SendInteractionFollowupParams,
+  ): Promise<SendInteractionFollowupResult>;
+  registerCommand(params: RegisterCommandParams): Promise<RegisterCommandResult>;
+  updateCommand(params: UpdateCommandParams): Promise<UpdateCommandResult>;
+  deleteCommand(params: DeleteCommandParams): Promise<DeleteCommandResult>;
+  getBotCommands(params: GetBotCommandsParams): Promise<GetBotCommandsResult>;
+};
+
 export type Transport = ProfileTransport &
   MessageTransport &
   VoiceTransport &
-  GroupOrChannelOrRolesTransport;
+  GroupOrChannelOrRolesTransport &
+  InteractionsTransport;
 
 export type { MessageInfo };

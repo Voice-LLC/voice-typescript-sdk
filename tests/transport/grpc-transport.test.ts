@@ -70,9 +70,9 @@ describe("GrpcBotsTransport", () => {
       });
     });
 
-    it("wires the connect client to the BotsApi service", () => {
+    it("wires connect clients for the BotsApi and InteractionsApi services", () => {
       new GrpcBotsTransport(options);
-      expect(createClient).toHaveBeenCalledOnce();
+      expect(createClient).toHaveBeenCalledTimes(2);
     });
   });
 

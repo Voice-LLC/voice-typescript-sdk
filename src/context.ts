@@ -1,6 +1,9 @@
 import type {
+  BotInteractionEvent,
   GatewayGroupPayload,
   GatewayMessage,
+  InteractionData,
+  InteractionType,
   MessageAttachment,
   MessageAuthor,
 } from "./events";
@@ -29,7 +32,11 @@ import type {
   KickUserResult,
   LeaveVoiceChannelResult,
   ReactionResult,
+  RespondToInteractionParams,
+  RespondToInteractionResult,
   RoleAssignmentResult,
+  SendInteractionFollowupParams,
+  SendInteractionFollowupResult,
   SetTypingResult,
   Transport,
   TypingResult,
@@ -39,7 +46,8 @@ import type {
 } from "./transport";
 
 export interface UpdateContext {
-  message: GatewayMessage;
+  message?: GatewayMessage;
+  interaction?: BotInteractionEvent;
   group: Omit<GatewayGroupPayload, "payloadJson">;
 }
 
@@ -52,44 +60,67 @@ export class Context {
     this.transport = transport;
   }
 
+  private requireMessage(): GatewayMessage {
+    if (!this.update.message) {
+      throw new Error("Это interaction-обновление — сообщение (message) недоступно.");
+    }
+    return this.update.message;
+  }
+
   get attachments(): MessageAttachment[] {
-    return this.update.message.attachments;
+    return this.requireMessage().attachments;
   }
 
   get author(): MessageAuthor {
-    return this.update.message.author;
+    return this.requireMessage().author;
   }
 
   get authorId(): string {
-    return this.update.message.authorId;
+    return this.requireMessage().authorId;
   }
 
   get channelId(): string {
-    return this.update.message.channelId;
+    return this.update.interaction?.channelId ?? this.requireMessage().channelId;
   }
 
   get componentsJson(): string | null {
-    return this.update.message.componentsJson;
+    return this.update.message?.componentsJson ?? null;
   }
 
   get group(): UpdateContext["group"] {
     return this.update.group;
   }
 
+  get interaction(): InteractionData | null {
+    return this.update.interaction?.data ?? null;
+  }
+
   get interactionCommandName(): string | null {
-    return this.update.message.interactionCommandName;
+    return this.update.interaction?.data.commandName ?? null;
+  }
+
+  get interactionCustomId(): string | null {
+    return this.update.interaction?.data.customId ?? null;
   }
 
   get interactionId(): string | null {
-    return this.update.message.interactionId;
+    return this.update.interaction?.interactionId ?? null;
+  }
+
+  get interactionType(): InteractionType | null {
+    return this.update.interaction?.type ?? null;
   }
 
   get interactionUserId(): string | null {
-    return this.update.message.interactionUserId;
+    return this.update.interaction?.invokingUserId ?? null;
+  }
+
+  get interactionValues(): string[] {
+    return this.update.interaction?.data.values ?? [];
   }
 
   get isInteraction(): boolean {
-    return this.update.message.interactionId !== null;
+    return this.update.interaction != null;
   }
 
   get message(): UpdateContext["message"] {
@@ -97,22 +128,22 @@ export class Context {
   }
 
   get messageId(): string {
-    return this.update.message.id;
+    return this.requireMessage().id;
   }
 
   get reactions(): Record<string, string[]> {
-    return this.update.message.reactions;
+    return this.requireMessage().reactions;
   }
 
   get replyTo(): string | null {
-    return this.update.message.replyTo;
+    return this.requireMessage().replyTo;
   }
 
   get text(): string {
-    return this.update.message.content;
+    return this.update.message?.content ?? "";
   }
 
-  addReaction(emoji: string, messageId: string = this.message.id): Promise<ReactionResult> {
+  addReaction(emoji: string, messageId: string = this.messageId): Promise<ReactionResult> {
     return this.transport.addReaction({ messageId, emoji });
   }
 
@@ -211,7 +242,7 @@ export class Context {
     return this.transport.leaveVoiceChannel({ channelId: this.channelId });
   }
 
-  removeReaction(emoji: string, messageId: string = this.message.id): Promise<ReactionResult> {
+  removeReaction(emoji: string, messageId: string = this.messageId): Promise<ReactionResult> {
     return this.transport.removeReaction({ messageId, emoji });
   }
 
@@ -219,11 +250,29 @@ export class Context {
     return this.transport.removeRole({ groupId, roleId, targetUserId });
   }
 
+  respondToInteraction(
+    params: Omit<RespondToInteractionParams, "interactionId" | "$typeName">,
+  ): Promise<RespondToInteractionResult> {
+    return this.transport.respondToInteraction({
+      interactionId: this.interactionId ?? "",
+      ...params,
+    });
+  }
+
+  sendInteractionFollowup(
+    params: Omit<SendInteractionFollowupParams, "interactionId" | "$typeName">,
+  ): Promise<SendInteractionFollowupResult> {
+    return this.transport.sendInteractionFollowup({
+      interactionId: this.interactionId ?? "",
+      ...params,
+    });
+  }
+
   sendMessage(content: string): Promise<MessageInfo> {
     return this.transport.sendMessage({
       content,
       channelId: this.channelId,
-      replyTo: this.update.message.id,
+      replyTo: this.messageId,
     });
   }
 

@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { createFakeTransport, createUpdate } from "./helpers/fake-transport";
+import {
+  createFakeTransport,
+  createInteractionUpdate,
+  createUpdate,
+} from "./helpers/fake-transport";
 
 import { Context } from "../src/context";
 import type { GatewayMessage } from "../src/events";
+import { InteractionType } from "../src/events";
 import type { Transport } from "../src/transport";
 
 describe("Context", () => {
@@ -17,7 +22,7 @@ describe("Context", () => {
 
   describe("accessors", () => {
     it("exposes the underlying message", () => {
-      expect(ctx.message.id).toBe("msg-1");
+      expect(ctx.message?.id).toBe("msg-1");
     });
 
     it("exposes the channel id", () => {
@@ -69,13 +74,13 @@ describe("Context", () => {
   });
 
   describe("interaction accessors", () => {
-    it("exposes interaction fields when present", () => {
+    it("exposes application-command fields when present", () => {
       const interaction = new Context(
-        createUpdate({
+        createInteractionUpdate({
           interactionId: "int-1",
-          interactionCommandName: "ping",
-          interactionUserId: "user-1",
-          componentsJson: '{"components":[]}',
+          invokingUserId: "user-1",
+          type: InteractionType.ApplicationCommand,
+          data: { commandName: "ping" },
         }),
         transport,
       );
@@ -83,13 +88,28 @@ describe("Context", () => {
       expect(interaction.interactionId).toBe("int-1");
       expect(interaction.interactionCommandName).toBe("ping");
       expect(interaction.interactionUserId).toBe("user-1");
-      expect(interaction.componentsJson).toBe('{"components":[]}');
+      expect(interaction.interactionType).toBe(InteractionType.ApplicationCommand);
       expect(interaction.isInteraction).toBe(true);
     });
 
-    it("reports not-an-interaction when interactionId is null", () => {
-      const plain = new Context(createUpdate({ interactionId: null }), transport);
+    it("exposes component customId and selected values", () => {
+      const component = new Context(
+        createInteractionUpdate({
+          type: InteractionType.MessageComponent,
+          data: { customId: "pick-fruit", values: ["apple"] },
+        }),
+        transport,
+      );
+
+      expect(component.interactionType).toBe(InteractionType.MessageComponent);
+      expect(component.interactionCustomId).toBe("pick-fruit");
+      expect(component.interactionValues).toEqual(["apple"]);
+    });
+
+    it("reports not-an-interaction for a plain message", () => {
+      const plain = new Context(createUpdate(), transport);
       expect(plain.isInteraction).toBe(false);
+      expect(plain.interactionId).toBeNull();
     });
   });
 

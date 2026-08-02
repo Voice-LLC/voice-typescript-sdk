@@ -1,7 +1,8 @@
 import { vi } from "vitest";
 
 import type { UpdateContext } from "../../src/context";
-import type { GatewayMessage } from "../../src/events";
+import type { BotInteractionEvent, GatewayMessage, InteractionData } from "../../src/events";
+import { InteractionType } from "../../src/events";
 import type { Transport } from "../../src/transport";
 
 export function createFakeTransport(): Transport {
@@ -83,10 +84,39 @@ export function createMessage(overrides: Partial<GatewayMessage> = {}): GatewayM
   };
 }
 
-/** Builds a full {@link UpdateContext}, defaulting the group payload to `{}`. */
 export function createUpdate(
   message: Partial<GatewayMessage> = {},
   group: UpdateContext["group"] = {},
 ): UpdateContext {
   return { message: createMessage(message), group };
+}
+
+export function createInteractionEvent(
+  overrides: Partial<Omit<BotInteractionEvent, "data">> & { data?: Partial<InteractionData> } = {},
+): BotInteractionEvent {
+  const { data, ...rest } = overrides;
+  return {
+    interactionId: "int-1",
+    invokingUserId: "user-1",
+    channelId: "chan-1",
+    groupId: "group-1",
+    type: InteractionType.ApplicationCommand,
+    ...rest,
+    data: {
+      commandName: null,
+      options: null,
+      customId: null,
+      values: null,
+      focusedOption: null,
+      modalFields: null,
+      ...data,
+    },
+  };
+}
+
+export function createInteractionUpdate(
+  interaction: Parameters<typeof createInteractionEvent>[0] = {},
+  group: UpdateContext["group"] = {},
+): UpdateContext {
+  return { interaction: createInteractionEvent(interaction), group };
 }

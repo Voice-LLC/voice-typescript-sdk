@@ -30,6 +30,15 @@ export function camelizeKeys(value: unknown): unknown {
   return value;
 }
 
+export function matchesCustomId(pattern: string, customId: string | null): boolean {
+  if (!customId) return false;
+
+  const starIndex = pattern.indexOf("*");
+  if (starIndex < 0) return pattern === customId;
+
+  return customId.startsWith(pattern.slice(0, starIndex));
+}
+
 export function parseJson(json: string): unknown {
   if (!json) return undefined;
   try {

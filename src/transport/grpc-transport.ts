@@ -11,6 +11,8 @@ import type {
   CreateGroupChannelResult,
   CreateGroupRoleParams,
   CreateGroupRoleResult,
+  DeleteCommandParams,
+  DeleteCommandResult,
   DeleteGroupCategoryParams,
   DeleteGroupCategoryResult,
   DeleteGroupChannelParams,
@@ -19,6 +21,8 @@ import type {
   DeleteGroupRoleResult,
   DeleteMessageParams,
   DeleteMessageResult,
+  GetBotCommandsParams,
+  GetBotCommandsResult,
   GetChannelMessagesParams,
   GetChannelMessagesResult,
   GetGroupCategoriesParams,
@@ -48,8 +52,14 @@ import type {
   LeaveVoiceChannelResult,
   ReactionParams,
   ReactionResult,
+  RegisterCommandParams,
+  RegisterCommandResult,
+  RespondToInteractionParams,
+  RespondToInteractionResult,
   RoleAssignmentParams,
   RoleAssignmentResult,
+  SendInteractionFollowupParams,
+  SendInteractionFollowupResult,
   SendMessageParams,
   SetStatusParams,
   SetStatusResult,
@@ -58,6 +68,8 @@ import type {
   Transport,
   TypingParams,
   TypingResult,
+  UpdateCommandParams,
+  UpdateCommandResult,
   UpdateGroupCategoryParams,
   UpdateGroupCategoryResult,
   UpdateGroupChannelParams,
@@ -90,7 +102,9 @@ import {
   KickUserRequestSchema,
   LeaveVoiceChannelRequestSchema,
   ReactionRequestSchema,
+  RespondToInteractionRequestSchema,
   RoleAssignmentRequestSchema,
+  SendInteractionFollowupRequestSchema,
   SendMessageRequestSchema,
   SetStatusRequestSchema,
   TypingRequestSchema,
@@ -99,155 +113,201 @@ import {
   UpdateMessageRequestSchema,
   UpdateRoleRequestSchema,
 } from "../gen/bots_pb";
+import {
+  DeleteCommandRequestSchema,
+  GetBotCommandsRequestSchema,
+  InteractionsApi,
+  RegisterCommandRequestSchema,
+  UpdateCommandRequestSchema,
+} from "../gen/interactions_pb";
 import type { ClientOptions } from "../types";
 
 export class GrpcBotsTransport implements Transport {
-  private readonly client: ConnectClient<typeof BotsApi>;
+  private readonly botsClient: ConnectClient<typeof BotsApi>;
+  private readonly interactionsClient: ConnectClient<typeof InteractionsApi>;
 
   constructor(options: ClientOptions) {
     if (!options.baseUrl) {
       throw new Error("Voice Client: `baseUrl` is required for the gRPC transport.");
     }
 
-    this.client = createClient(
-      BotsApi,
-      createGrpcTransport({
-        baseUrl: options.baseUrl,
-        interceptors: [createTokenInterceptor(options.token)],
-      }),
-    );
+    const transport = createGrpcTransport({
+      baseUrl: options.baseUrl,
+      interceptors: [createTokenInterceptor(options.token)],
+    });
+
+    this.botsClient = createClient(BotsApi, transport);
+    this.interactionsClient = createClient(InteractionsApi, transport);
   }
 
   async addReaction(params: ReactionParams): Promise<ReactionResult> {
-    return await this.client.addReaction(create(ReactionRequestSchema, params));
+    return await this.botsClient.addReaction(create(ReactionRequestSchema, params));
   }
 
   async assignRole(params: RoleAssignmentParams): Promise<RoleAssignmentResult> {
-    return await this.client.assignRole(create(RoleAssignmentRequestSchema, params));
+    return await this.botsClient.assignRole(create(RoleAssignmentRequestSchema, params));
   }
 
   async createCategory(params: CreateGroupCategoryParams): Promise<CreateGroupCategoryResult> {
-    return await this.client.createCategory(create(CreateCategoryRequestSchema, params));
+    return await this.botsClient.createCategory(create(CreateCategoryRequestSchema, params));
   }
 
   async createChannel(params: CreateGroupChannelParams): Promise<CreateGroupChannelResult> {
-    return await this.client.createChannel(create(CreateChannelRequestSchema, params));
+    return await this.botsClient.createChannel(create(CreateChannelRequestSchema, params));
   }
 
   async createRole(params: CreateGroupRoleParams): Promise<CreateGroupRoleResult> {
-    return await this.client.createRole(create(CreateRoleRequestSchema, params));
+    return await this.botsClient.createRole(create(CreateRoleRequestSchema, params));
   }
 
   async deleteCategory(params: DeleteGroupCategoryParams): Promise<DeleteGroupCategoryResult> {
-    return await this.client.deleteCategory(create(DeleteCategoryRequestSchema, params));
+    return await this.botsClient.deleteCategory(create(DeleteCategoryRequestSchema, params));
   }
 
   async deleteChannel(params: DeleteGroupChannelParams): Promise<DeleteGroupChannelResult> {
-    return await this.client.deleteChannel(create(DeleteChannelRequestSchema, params));
+    return await this.botsClient.deleteChannel(create(DeleteChannelRequestSchema, params));
   }
 
   async deleteMessage(params: DeleteMessageParams): Promise<DeleteMessageResult> {
-    return await this.client.deleteMessage(create(DeleteMessageRequestSchema, params));
+    return await this.botsClient.deleteMessage(create(DeleteMessageRequestSchema, params));
   }
 
   async deleteRole(params: DeleteGroupRoleParams): Promise<DeleteGroupRoleResult> {
-    return await this.client.deleteRole(create(DeleteRoleRequestSchema, params));
+    return await this.botsClient.deleteRole(create(DeleteRoleRequestSchema, params));
   }
 
   async getCategory(params: GetGroupCategoryParams): Promise<GetGroupCategoryResult> {
-    return await this.client.getCategory(create(GetCategoryRequestSchema, params));
+    return await this.botsClient.getCategory(create(GetCategoryRequestSchema, params));
   }
 
   async getChannel(params: GetGroupChannelParams): Promise<GetGroupChannelResult> {
-    return await this.client.getChannel(create(GetChannelRequestSchema, params));
+    return await this.botsClient.getChannel(create(GetChannelRequestSchema, params));
   }
 
   async getChannelMessages(params: GetChannelMessagesParams): Promise<GetChannelMessagesResult> {
-    return await this.client.getChannelMessages(create(GetChannelMessagesRequestSchema, params));
+    return await this.botsClient.getChannelMessages(
+      create(GetChannelMessagesRequestSchema, params),
+    );
   }
 
   async getGroup(params: GetGroupParams): Promise<GetGroupResult> {
-    return await this.client.getGroup(create(GetGroupRequestSchema, params));
+    return await this.botsClient.getGroup(create(GetGroupRequestSchema, params));
   }
 
   async getGroupCategories(params: GetGroupCategoriesParams): Promise<GetGroupCategoriesResult> {
-    return await this.client.getGroupCategories(create(GetGroupRequestSchema, params));
+    return await this.botsClient.getGroupCategories(create(GetGroupRequestSchema, params));
   }
 
   async getGroupChannels(params: GetGroupChannelsParams): Promise<GetGroupChannelsResult> {
-    return await this.client.getGroupChannels(create(GetGroupRequestSchema, params));
+    return await this.botsClient.getGroupChannels(create(GetGroupRequestSchema, params));
   }
 
   async getGroupRoles(params: GetGroupRolesParams): Promise<GetGroupRolesResult> {
-    return await this.client.getGroupRoles(create(GetGroupRolesRequestSchema, params));
+    return await this.botsClient.getGroupRoles(create(GetGroupRolesRequestSchema, params));
   }
 
   async getGroupUsers(params: GetGroupUsersParams): Promise<GetGroupUsersResult> {
-    return await this.client.getGroupUsers(create(GetGroupUsersRequestSchema, params));
+    return await this.botsClient.getGroupUsers(create(GetGroupUsersRequestSchema, params));
   }
 
   async getMe(params: GetMeParams): Promise<GetMeResult> {
-    return await this.client.getMe(create(EmptySchema, params));
+    return await this.botsClient.getMe(create(EmptySchema, params));
   }
 
   async getMyGroups(): Promise<GetMyGroupsResult> {
-    return await this.client.getMyGroups({});
+    return await this.botsClient.getMyGroups({});
   }
 
   async getUser(params: GetUserParams): Promise<GetUserResult> {
-    return await this.client.getUser(create(GetUserRequestSchema, params));
+    return await this.botsClient.getUser(create(GetUserRequestSchema, params));
   }
 
   async joinVoiceChannel(params: JoinVoiceChannelParams): Promise<JoinVoiceChannelResult> {
-    return await this.client.joinVoiceChannel(create(JoinVoiceChannelRequestSchema, params));
+    return await this.botsClient.joinVoiceChannel(create(JoinVoiceChannelRequestSchema, params));
   }
 
   async kickUser(params: KickUserParams): Promise<KickUserResult> {
-    return await this.client.kickUser(create(KickUserRequestSchema, params));
+    return await this.botsClient.kickUser(create(KickUserRequestSchema, params));
   }
 
   async leaveVoiceChannel(params: LeaveVoiceChannelParams): Promise<LeaveVoiceChannelResult> {
-    return await this.client.leaveVoiceChannel(create(LeaveVoiceChannelRequestSchema, params));
+    return await this.botsClient.leaveVoiceChannel(create(LeaveVoiceChannelRequestSchema, params));
   }
 
   async removeReaction(params: ReactionParams): Promise<ReactionResult> {
-    return await this.client.removeReaction(create(ReactionRequestSchema, params));
+    return await this.botsClient.removeReaction(create(ReactionRequestSchema, params));
   }
 
   async removeRole(params: RoleAssignmentParams): Promise<RoleAssignmentResult> {
-    return await this.client.removeRole(create(RoleAssignmentRequestSchema, params));
+    return await this.botsClient.removeRole(create(RoleAssignmentRequestSchema, params));
+  }
+
+  async respondToInteraction(
+    params: RespondToInteractionParams,
+  ): Promise<RespondToInteractionResult> {
+    return await this.botsClient.respondToInteraction(
+      create(RespondToInteractionRequestSchema, params),
+    );
+  }
+
+  async sendInteractionFollowup(
+    params: SendInteractionFollowupParams,
+  ): Promise<SendInteractionFollowupResult> {
+    return await this.botsClient.sendInteractionFollowup(
+      create(SendInteractionFollowupRequestSchema, params),
+    );
+  }
+
+  async registerCommand(params: RegisterCommandParams): Promise<RegisterCommandResult> {
+    return await this.interactionsClient.registerCommand(
+      create(RegisterCommandRequestSchema, params),
+    );
+  }
+
+  async updateCommand(params: UpdateCommandParams): Promise<UpdateCommandResult> {
+    return await this.interactionsClient.updateCommand(create(UpdateCommandRequestSchema, params));
+  }
+
+  async deleteCommand(params: DeleteCommandParams): Promise<DeleteCommandResult> {
+    return await this.interactionsClient.deleteCommand(create(DeleteCommandRequestSchema, params));
+  }
+
+  async getBotCommands(params: GetBotCommandsParams): Promise<GetBotCommandsResult> {
+    return await this.interactionsClient.getBotCommands(
+      create(GetBotCommandsRequestSchema, params),
+    );
   }
 
   async sendMessage(params: SendMessageParams): Promise<MessageInfo> {
-    return await this.client.sendMessage(create(SendMessageRequestSchema, params));
+    return await this.botsClient.sendMessage(create(SendMessageRequestSchema, params));
   }
 
   async setStatus(params: SetStatusParams): Promise<SetStatusResult> {
-    return await this.client.setStatus(create(SetStatusRequestSchema, params));
+    return await this.botsClient.setStatus(create(SetStatusRequestSchema, params));
   }
 
   async setTyping(params: SetTypingParams): Promise<SetTypingResult> {
-    return await this.client.setTyping(create(BotTypingRequestSchema, params));
+    return await this.botsClient.setTyping(create(BotTypingRequestSchema, params));
   }
 
   async typing(params: TypingParams): Promise<TypingResult> {
-    return await this.client.typing(create(TypingRequestSchema, params));
+    return await this.botsClient.typing(create(TypingRequestSchema, params));
   }
 
   async updateCategory(params: UpdateGroupCategoryParams): Promise<UpdateGroupCategoryResult> {
-    return await this.client.updateCategory(create(UpdateCategoryRequestSchema, params));
+    return await this.botsClient.updateCategory(create(UpdateCategoryRequestSchema, params));
   }
 
   async updateChannel(params: UpdateGroupChannelParams): Promise<UpdateGroupChannelResult> {
-    return await this.client.updateChannel(create(UpdateChannelRequestSchema, params));
+    return await this.botsClient.updateChannel(create(UpdateChannelRequestSchema, params));
   }
 
   async updateMessage(params: UpdateMessageParams): Promise<UpdateMessageResult> {
-    return await this.client.updateMessage(create(UpdateMessageRequestSchema, params));
+    return await this.botsClient.updateMessage(create(UpdateMessageRequestSchema, params));
   }
 
   async updateRole(params: UpdateGroupRoleParams): Promise<UpdateGroupRoleResult> {
-    return await this.client.updateRole(create(UpdateRoleRequestSchema, params));
+    return await this.botsClient.updateRole(create(UpdateRoleRequestSchema, params));
   }
 }
 

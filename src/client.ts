@@ -1,11 +1,12 @@
 import type { UpdateContext } from "./context";
 import { Context } from "./context";
+import { InteractionType } from "./events";
 import type { Gateway } from "./gateway";
 import { SignalRGateway } from "./gateway";
 import type { Transport } from "./transport";
 import { GrpcBotsTransport } from "./transport";
 import type { ClientConfig, ClientOptions } from "./types";
-import { createClientConfigOptions } from "./utils";
+import { createClientConfigOptions, matchesCustomId } from "./utils";
 
 export type Matcher = string | string[] | RegExp | ((ctx: Context) => boolean);
 export type MatchHandler = (ctx: Context) => void | Promise<unknown>;
@@ -14,7 +15,7 @@ export type ClientErrorHandler = (error: Error) => void;
 
 export class Client {
   readonly options: ClientOptions;
-  private readonly transport: Transport;
+  readonly transport: Transport;
   private gateway?: Gateway;
   private readonly matches = new Map<Matcher, MatchHandler>();
   private onClientErrorHandler?: ClientErrorHandler;
@@ -37,6 +38,42 @@ export class Client {
   match(matcher: Matcher, handler: MatchHandler): this {
     this.matches.set(matcher, handler);
     return this;
+  }
+
+  command(name: string, handler: MatchHandler): this {
+    return this.match(
+      (ctx) =>
+        ctx.interactionType === InteractionType.ApplicationCommand &&
+        ctx.interactionCommandName === name,
+      handler,
+    );
+  }
+
+  component(pattern: string, handler: MatchHandler): this {
+    return this.match(
+      (ctx) =>
+        ctx.interactionType === InteractionType.MessageComponent &&
+        matchesCustomId(pattern, ctx.interactionCustomId),
+      handler,
+    );
+  }
+
+  modal(pattern: string, handler: MatchHandler): this {
+    return this.match(
+      (ctx) =>
+        ctx.interactionType === InteractionType.ModalSubmit &&
+        matchesCustomId(pattern, ctx.interactionCustomId),
+      handler,
+    );
+  }
+
+  autocomplete(name: string, handler: MatchHandler): this {
+    return this.match(
+      (ctx) =>
+        ctx.interactionType === InteractionType.ApplicationCommandAutocomplete &&
+        ctx.interactionCommandName === name,
+      handler,
+    );
   }
 
   onError(handler: (error: Error) => void): this {
@@ -69,7 +106,7 @@ export class Client {
   }
 
   private isMatch(matcher: Matcher, ctx: Context): boolean {
-    const text = ctx.update.message.content;
+    const text = ctx.update.message?.content ?? "";
 
     switch (true) {
       case typeof matcher === "string":

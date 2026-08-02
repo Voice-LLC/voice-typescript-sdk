@@ -87,9 +87,9 @@ service BotsApi {
   // Требует scope "groups.read". Текущие участники группы (common.User, включая ботов с is_bot = true).
   rpc GetGroupUsers (GetGroupUsersRequest) returns (GetGroupUsersResponse);
 
-  // Требует intent Guilds. Профиль произвольного пользователя по его id — без ограничения общей
-  // группой (та же команда/маршрутизация, что и UsersApi.GetMe для людей): полезно, когда у бота
-  // есть только голый id (author_id сообщения, упомянутый пользователь), а не полный common.User.
+  // Требует intent Guilds. Профиль произвольного пользователя по его id - без ограничения общей
+  // группой (как GetUserByIdCommand у людей): полезно, когда у бота есть только голый id
+  // (author_id сообщения, упомянутый пользователь), а не полный common.User.
   rpc GetUser (GetUserRequest) returns (common.User);
 
   // Требует intent Guilds. Реальная авторизация - Permissions.KickMembers через managed-роль бота;
@@ -343,7 +343,7 @@ message BotRole {
   string name = 3;
   string position = 4;
   string color = 5;
-  repeated int64 permissions = 6;
+  int64 permissions = 6;
 }
 
 message CreateCategoryRequest {
@@ -393,7 +393,7 @@ message CreateRoleRequest {
   string group_id = 1;
   string name = 2;
   optional string color = 3;
-  repeated int64 permissions = 4;
+  int64 permissions = 4;
 }
 
 message UpdateRoleRequest {
