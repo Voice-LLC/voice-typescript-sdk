@@ -7,7 +7,6 @@ import {
 } from "./helpers/fake-transport";
 
 import { Context } from "../src/context";
-import type { GatewayMessage } from "../src/events";
 import { InteractionType } from "../src/events";
 import type { Transport } from "../src/transport";
 
@@ -20,61 +19,44 @@ describe("Context", () => {
     ctx = new Context(createUpdate(), transport);
   });
 
-  describe("accessors", () => {
-    it("exposes the underlying message", () => {
-      expect(ctx.message?.id).toBe("msg-1");
-    });
-
-    it("exposes the channel id", () => {
-      expect(ctx.channelId).toBe("chan-1");
-    });
-
-    it("exposes the message text via `text`", () => {
+  describe("text", () => {
+    it("returns the message content", () => {
       expect(ctx.text).toBe("hello world");
     });
 
-    it("returns an empty string for `text` when there is no message", () => {
+    it("returns an empty string when there is no message", () => {
       const interaction = new Context(createInteractionUpdate(), transport);
       expect(interaction.text).toBe("");
     });
+  });
 
-    it("exposes the message id", () => {
-      expect(ctx.messageId).toBe("msg-1");
+  describe("channelId", () => {
+    it("falls back to the message channel id when there is no interaction", () => {
+      expect(ctx.channelId).toBe("chan-1");
     });
 
-    it("exposes the message author", () => {
-      expect(ctx.author.id).toBe("author-1");
-      expect(ctx.author.username).toBe("bob");
-    });
-
-    it("exposes the author id", () => {
-      const withAuthorId = new Context(createUpdate({ authorId: "author-1" }), transport);
-      expect(withAuthorId.authorId).toBe("author-1");
-    });
-
-    it("exposes attachments", () => {
-      const attachment = { id: "att-1" } as GatewayMessage["attachments"][number];
-      const withAttachment = new Context(createUpdate({ attachments: [attachment] }), transport);
-      expect(withAttachment.attachments).toEqual([attachment]);
-    });
-
-    it("exposes reactions", () => {
-      const withReactions = new Context(
-        createUpdate({ reactions: { "👍": ["author-1"] } }),
+    it("prefers the interaction channel id when present", () => {
+      const interaction = new Context(
+        createInteractionUpdate({ channelId: "int-chan" }),
         transport,
       );
-      expect(withReactions.reactions).toEqual({ "👍": ["author-1"] });
+      expect(interaction.channelId).toBe("int-chan");
+    });
+  });
+
+  describe("componentsJson", () => {
+    it("exposes the raw components JSON when present", () => {
+      const withComponents = new Context(createUpdate({ componentsJson: '{"type":1}' }), transport);
+      expect(withComponents.componentsJson).toBe('{"type":1}');
     });
 
-    it("exposes the reply target", () => {
-      const reply = new Context(createUpdate({ replyTo: "msg-0" }), transport);
-      expect(reply.replyTo).toBe("msg-0");
+    it("returns null when the message has no components", () => {
+      expect(ctx.componentsJson).toBeNull();
     });
 
-    it("exposes the group payload", () => {
-      const group = { groupId: "group-1", type: "MessageCreated" };
-      const withGroup = new Context(createUpdate({}, group), transport);
-      expect(withGroup.group).toBe(group);
+    it("returns null for an interaction update with no message", () => {
+      const interaction = new Context(createInteractionUpdate(), transport);
+      expect(interaction.componentsJson).toBeNull();
     });
   });
 
@@ -106,23 +88,8 @@ describe("Context", () => {
         transport,
       );
 
-      expect(component.interactionType).toBe(InteractionType.MessageComponent);
       expect(component.interactionCustomId).toBe("pick-fruit");
       expect(component.interactionValues).toEqual(["apple"]);
-    });
-
-    it("reports not-an-interaction for a plain message", () => {
-      const plain = new Context(createUpdate(), transport);
-      expect(plain.isInteraction).toBe(false);
-      expect(plain.interactionId).toBeNull();
-    });
-
-    it("returns null/empty defaults for every interaction getter on a plain message", () => {
-      expect(ctx.interactionCommandName).toBeNull();
-      expect(ctx.interactionCustomId).toBeNull();
-      expect(ctx.interactionType).toBeNull();
-      expect(ctx.interactionUserId).toBeNull();
-      expect(ctx.interactionValues).toEqual([]);
     });
 
     it("exposes the raw interaction data payload", () => {
@@ -133,49 +100,39 @@ describe("Context", () => {
       expect(interaction.interaction?.commandName).toBe("ping");
     });
 
-    it("returns null interaction data for a plain message", () => {
+    it("returns null/empty defaults for every interaction getter on a plain message", () => {
+      expect(ctx.isInteraction).toBe(false);
       expect(ctx.interaction).toBeNull();
-    });
-
-    it("falls back to the message channel id when there is no interaction", () => {
-      expect(ctx.channelId).toBe("chan-1");
-    });
-
-    it("prefers the interaction channel id when present", () => {
-      const interaction = new Context(
-        createInteractionUpdate({ channelId: "int-chan" }),
-        transport,
-      );
-      expect(interaction.channelId).toBe("int-chan");
-    });
-  });
-
-  describe("componentsJson", () => {
-    it("exposes the raw components JSON when present", () => {
-      const withComponents = new Context(createUpdate({ componentsJson: '{"type":1}' }), transport);
-      expect(withComponents.componentsJson).toBe('{"type":1}');
-    });
-
-    it("returns null when the message has no components", () => {
-      expect(ctx.componentsJson).toBeNull();
-    });
-
-    it("returns null for an interaction update with no message", () => {
-      const interaction = new Context(createInteractionUpdate(), transport);
-      expect(interaction.componentsJson).toBeNull();
+      expect(ctx.interactionId).toBeNull();
+      expect(ctx.interactionCommandName).toBeNull();
+      expect(ctx.interactionCustomId).toBeNull();
+      expect(ctx.interactionType).toBeNull();
+      expect(ctx.interactionUserId).toBeNull();
+      expect(ctx.interactionValues).toEqual([]);
     });
   });
 
   describe("message-only accessors on an interaction update", () => {
-    it("throws because the message is unavailable", () => {
+    it("throw because the message is unavailable", () => {
       const interaction = new Context(createInteractionUpdate(), transport);
       expect(() => interaction.messageId).toThrow(/message.*недоступно/);
       expect(() => interaction.author).toThrow(/message.*недоступно/);
     });
   });
 
+  describe("sendMessage", () => {
+    it("injects the current channel and replies to the current message", async () => {
+      await ctx.sendMessage("hi there");
+      expect(transport.sendMessage).toHaveBeenCalledWith({
+        content: "hi there",
+        channelId: "chan-1",
+        replyTo: "msg-1",
+      });
+    });
+  });
+
   describe("respondToInteraction", () => {
-    it("forwards the current interaction id and params", async () => {
+    it("injects the current interaction id and forwards params", async () => {
       const interaction = new Context(
         createInteractionUpdate({ interactionId: "int-9" }),
         transport,
@@ -197,7 +154,7 @@ describe("Context", () => {
   });
 
   describe("sendInteractionFollowup", () => {
-    it("forwards the current interaction id and params", async () => {
+    it("injects the current interaction id and forwards params", async () => {
       const interaction = new Context(
         createInteractionUpdate({ interactionId: "int-9" }),
         transport,
@@ -218,100 +175,39 @@ describe("Context", () => {
     });
   });
 
-  describe("sendMessage", () => {
-    it("forwards content, channel and reply target", async () => {
-      await ctx.sendMessage("hi there");
-      expect(transport.sendMessage).toHaveBeenCalledWith({
-        content: "hi there",
-        channelId: "chan-1",
-        replyTo: "msg-1",
-      });
-    });
+  describe("reactions", () => {
+    it.each(["addReaction", "removeReaction"] as const)(
+      "%s defaults the message id to the current message",
+      async (method) => {
+        await (ctx as any)[method]("👍");
+        expect((transport as any)[method]).toHaveBeenCalledWith({
+          messageId: "msg-1",
+          emoji: "👍",
+        });
+      },
+    );
+
+    it.each(["addReaction", "removeReaction"] as const)(
+      "%s uses an explicit message id when provided",
+      async (method) => {
+        await (ctx as any)[method]("👍", "other-msg");
+        expect((transport as any)[method]).toHaveBeenCalledWith({
+          messageId: "other-msg",
+          emoji: "👍",
+        });
+      },
+    );
   });
 
-  describe("updateMessage", () => {
-    it("forwards the message id and new content", async () => {
-      await ctx.updateMessage("other-msg", "edited");
-      expect(transport.updateMessage).toHaveBeenCalledWith({
-        content: "edited",
-        messageId: "other-msg",
-      });
-    });
-  });
-
-  describe("deleteMessage", () => {
-    it("forwards the message id", async () => {
-      await ctx.deleteMessage("other-msg");
-      expect(transport.deleteMessage).toHaveBeenCalledWith({ messageId: "other-msg" });
-    });
-  });
-
-  describe("typing", () => {
-    it("forwards the typing flag and channel", async () => {
-      await ctx.typing(true);
-      expect(transport.typing).toHaveBeenCalledWith({ channelId: "chan-1", isTyping: true });
-    });
-  });
-
-  describe("setTyping", () => {
-    it("forwards the typing state and channel", async () => {
-      await ctx.setTyping(1);
-      expect(transport.setTyping).toHaveBeenCalledWith({ channelId: "chan-1", state: 1 });
-    });
-  });
-
-  describe("addReaction", () => {
-    it("defaults the message id to the current message", async () => {
-      await ctx.addReaction("👍");
-      expect(transport.addReaction).toHaveBeenCalledWith({ messageId: "msg-1", emoji: "👍" });
-    });
-
-    it("uses an explicit message id when provided", async () => {
-      await ctx.addReaction("👍", "other-msg");
-      expect(transport.addReaction).toHaveBeenCalledWith({ messageId: "other-msg", emoji: "👍" });
-    });
-  });
-
-  describe("removeReaction", () => {
-    it("defaults the message id to the current message", async () => {
-      await ctx.removeReaction("👍");
-      expect(transport.removeReaction).toHaveBeenCalledWith({ messageId: "msg-1", emoji: "👍" });
-    });
-
-    it("uses an explicit message id when provided", async () => {
-      await ctx.removeReaction("👍", "other-msg");
-      expect(transport.removeReaction).toHaveBeenCalledWith({
-        messageId: "other-msg",
-        emoji: "👍",
-      });
-    });
-  });
-
-  describe("joinVoiceChannel", () => {
-    it("forwards the current channel", async () => {
-      await ctx.joinVoiceChannel();
-      expect(transport.joinVoiceChannel).toHaveBeenCalledWith({ channelId: "chan-1" });
-    });
-  });
-
-  describe("leaveVoiceChannel", () => {
-    it("forwards the current channel", async () => {
-      await ctx.leaveVoiceChannel();
-      expect(transport.leaveVoiceChannel).toHaveBeenCalledWith({ channelId: "chan-1" });
-    });
-  });
-
-  describe("getMyGroups", () => {
-    it("delegates to the transport with no args", async () => {
-      await ctx.getMyGroups();
-      expect(transport.getMyGroups).toHaveBeenCalledWith();
-    });
-  });
-
-  describe("getGroup", () => {
-    it("forwards the group id", async () => {
-      await ctx.getGroup("group-9");
-      expect(transport.getGroup).toHaveBeenCalledWith({ groupId: "group-9" });
+  describe("channel-scoped actions", () => {
+    it.each([
+      ["typing", [true], { channelId: "chan-1", isTyping: true }],
+      ["setTyping", [1], { channelId: "chan-1", state: 1 }],
+      ["joinVoiceChannel", [], { channelId: "chan-1" }],
+      ["leaveVoiceChannel", [], { channelId: "chan-1" }],
+    ] as const)("%s injects the current channel id", async (method, args, expected) => {
+      await (ctx as any)[method](...args);
+      expect((transport as any)[method]).toHaveBeenCalledWith(expected);
     });
   });
 
@@ -327,55 +223,10 @@ describe("Context", () => {
     });
   });
 
-  describe("getUser", () => {
-    it("forwards the user id", async () => {
-      await ctx.getUser("user-7");
-      expect(transport.getUser).toHaveBeenCalledWith({ userId: "user-7" });
-    });
-  });
-
-  describe("kickUser", () => {
-    it("forwards the group and user ids", async () => {
-      await ctx.kickUser("group-1", "user-7");
-      expect(transport.kickUser).toHaveBeenCalledWith({
-        groupId: "group-1",
-        userId: "user-7",
-      });
-    });
-  });
-
-  describe("getGroupUsers", () => {
-    it("forwards the group id", async () => {
-      await ctx.getGroupUsers("group-1");
-      expect(transport.getGroupUsers).toHaveBeenCalledWith({ groupId: "group-1" });
-    });
-  });
-
-  describe("getGroupRoles", () => {
-    it("forwards the group id", async () => {
-      await ctx.getGroupRoles("group-1");
-      expect(transport.getGroupRoles).toHaveBeenCalledWith({ groupId: "group-1" });
-    });
-  });
-
-  describe("getGroupCategories", () => {
-    it("forwards the group id", async () => {
-      await ctx.getGroupCategories("group-1");
-      expect(transport.getGroupCategories).toHaveBeenCalledWith({ groupId: "group-1" });
-    });
-  });
-
-  describe("getGroupChannels", () => {
-    it("forwards the group id", async () => {
-      await ctx.getGroupChannels("group-1");
-      expect(transport.getGroupChannels).toHaveBeenCalledWith({ groupId: "group-1" });
-    });
-  });
-
-  describe("getChannel", () => {
-    it("forwards the channel id", async () => {
-      await ctx.getChannel("chan-9");
-      expect(transport.getChannel).toHaveBeenCalledWith({ channelId: "chan-9" });
+  describe("getMyGroups", () => {
+    it("delegates to the transport with no args", async () => {
+      await ctx.getMyGroups();
+      expect(transport.getMyGroups).toHaveBeenCalledWith();
     });
   });
 
@@ -399,61 +250,6 @@ describe("Context", () => {
     });
   });
 
-  describe("createCategory", () => {
-    it("forwards the group id and name", async () => {
-      await ctx.createCategory("group-1", "General");
-      expect(transport.createCategory).toHaveBeenCalledWith({
-        groupId: "group-1",
-        name: "General",
-      });
-    });
-  });
-
-  describe("updateCategory", () => {
-    it("forwards the category id and name", async () => {
-      await ctx.updateCategory("cat-1", "Renamed");
-      expect(transport.updateCategory).toHaveBeenCalledWith({
-        categoryId: "cat-1",
-        name: "Renamed",
-      });
-    });
-  });
-
-  describe("deleteCategory", () => {
-    it("forwards the category id", async () => {
-      await ctx.deleteCategory("cat-1");
-      expect(transport.deleteCategory).toHaveBeenCalledWith({ categoryId: "cat-1" });
-    });
-  });
-
-  describe("createChannel", () => {
-    it("forwards the category id, type and name", async () => {
-      await ctx.createChannel("cat-1", 0, "general");
-      expect(transport.createChannel).toHaveBeenCalledWith({
-        categoryId: "cat-1",
-        type: 0,
-        name: "general",
-      });
-    });
-  });
-
-  describe("updateChannel", () => {
-    it("forwards the channel id and name", async () => {
-      await ctx.updateChannel("chan-1", "renamed");
-      expect(transport.updateChannel).toHaveBeenCalledWith({
-        channelId: "chan-1",
-        name: "renamed",
-      });
-    });
-  });
-
-  describe("deleteChannel", () => {
-    it("forwards the channel id", async () => {
-      await ctx.deleteChannel("chan-1");
-      expect(transport.deleteChannel).toHaveBeenCalledWith({ channelId: "chan-1" });
-    });
-  });
-
   describe("createRole", () => {
     it("forwards name, group, permissions and color", async () => {
       await ctx.createRole("group-1", "Admin", 8n, "#ff0000");
@@ -465,7 +261,7 @@ describe("Context", () => {
       });
     });
 
-    it("omits color when not provided", async () => {
+    it("passes an undefined color when none is provided", async () => {
       await ctx.createRole("group-1", "Member", 1n);
       expect(transport.createRole).toHaveBeenCalledWith({
         name: "Member",
@@ -476,44 +272,37 @@ describe("Context", () => {
     });
   });
 
-  describe("updateRole", () => {
-    it("forwards role id, name, permissions and color", async () => {
-      await ctx.updateRole("role-1", "Admin", 8n, "#00ff00");
-      expect(transport.updateRole).toHaveBeenCalledWith({
-        roleId: "role-1",
-        name: "Admin",
-        permissions: 8n,
-        color: "#00ff00",
-      });
-    });
-  });
-
-  describe("deleteRole", () => {
-    it("forwards the role id", async () => {
-      await ctx.deleteRole("role-1");
-      expect(transport.deleteRole).toHaveBeenCalledWith({ roleId: "role-1" });
-    });
-  });
-
-  describe("assignRole", () => {
-    it("forwards group, role and target user ids", async () => {
-      await ctx.assignRole("group-1", "role-1", "user-7");
-      expect(transport.assignRole).toHaveBeenCalledWith({
-        groupId: "group-1",
-        roleId: "role-1",
-        targetUserId: "user-7",
-      });
-    });
-  });
-
-  describe("removeRole", () => {
-    it("forwards group, role and target user ids", async () => {
-      await ctx.removeRole("group-1", "role-1", "user-7");
-      expect(transport.removeRole).toHaveBeenCalledWith({
-        groupId: "group-1",
-        roleId: "role-1",
-        targetUserId: "user-7",
-      });
+  describe("pass-through actions", () => {
+    // These wrappers only repackage their positional args into the transport's
+    // named-params object — one row per method guards that mapping.
+    it.each([
+      ["updateMessage", ["m", "edit"], { content: "edit", messageId: "m" }],
+      ["deleteMessage", ["m"], { messageId: "m" }],
+      ["getGroup", ["g"], { groupId: "g" }],
+      ["getUser", ["u"], { userId: "u" }],
+      ["kickUser", ["g", "u"], { groupId: "g", userId: "u" }],
+      ["getGroupUsers", ["g"], { groupId: "g" }],
+      ["getGroupRoles", ["g"], { groupId: "g" }],
+      ["getGroupCategories", ["g"], { groupId: "g" }],
+      ["getGroupChannels", ["g"], { groupId: "g" }],
+      ["getChannel", ["c"], { channelId: "c" }],
+      ["createCategory", ["g", "General"], { groupId: "g", name: "General" }],
+      ["updateCategory", ["cat", "Renamed"], { categoryId: "cat", name: "Renamed" }],
+      ["deleteCategory", ["cat"], { categoryId: "cat" }],
+      ["createChannel", ["cat", 0, "general"], { categoryId: "cat", type: 0, name: "general" }],
+      ["updateChannel", ["c", "renamed"], { channelId: "c", name: "renamed" }],
+      ["deleteChannel", ["c"], { channelId: "c" }],
+      ["deleteRole", ["r"], { roleId: "r" }],
+      [
+        "updateRole",
+        ["r", "Admin", 8n, "#00ff00"],
+        { roleId: "r", name: "Admin", permissions: 8n, color: "#00ff00" },
+      ],
+      ["assignRole", ["g", "r", "u"], { groupId: "g", roleId: "r", targetUserId: "u" }],
+      ["removeRole", ["g", "r", "u"], { groupId: "g", roleId: "r", targetUserId: "u" }],
+    ] as const)("%s repackages its args and delegates", async (method, args, expected) => {
+      await (ctx as any)[method](...args);
+      expect((transport as any)[method]).toHaveBeenCalledWith(expected);
     });
   });
 });

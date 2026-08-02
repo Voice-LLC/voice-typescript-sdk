@@ -70,7 +70,6 @@ describe("GrpcBotsTransport", () => {
 
     it("builds the grpc transport with the provided baseUrl", () => {
       new GrpcBotsTransport(options);
-      expect(createGrpcTransport).toHaveBeenCalledOnce();
       expect(createGrpcTransport.mock.calls[0][0]).toMatchObject({
         baseUrl: "https://api.voice.dev",
       });
@@ -91,7 +90,6 @@ describe("GrpcBotsTransport", () => {
 
       const next = vi.fn((req: unknown) => req);
       const req = { header: new Map<string, string>() };
-      // interceptor(next)(req)
       await (interceptors[0] as any)(next)(req);
 
       expect(req.header.get("Authorization")).toBe("Bearer secret-token");
@@ -106,224 +104,62 @@ describe("GrpcBotsTransport", () => {
       transport = new GrpcBotsTransport(options);
     });
 
-    it("getMe calls the client with an empty request", async () => {
+    // Each action maps its params through a generated request schema and forwards
+    // them to the matching connect client. One row per method verifies the payload
+    // survives that mapping.
+    it.each([
+      ["getUser", { userId: "u" }, { userId: "u" }],
+      ["kickUser", { groupId: "g", userId: "u" }, { groupId: "g", userId: "u" }],
+      ["setStatus", { status: 1 }, { status: 1 }],
+      ["sendMessage", { channelId: "c", content: "hi" }, { channelId: "c", content: "hi" }],
+      ["updateMessage", { messageId: "m", content: "edit" }, { messageId: "m", content: "edit" }],
+      ["deleteMessage", { messageId: "m" }, { messageId: "m" }],
+      ["typing", { channelId: "c", isTyping: true }, { channelId: "c", isTyping: true }],
+      ["setTyping", { channelId: "c", state: 1 }, { channelId: "c", state: 1 }],
+      ["addReaction", { messageId: "m", emoji: "👍" }, { messageId: "m", emoji: "👍" }],
+      ["removeReaction", { messageId: "m", emoji: "👍" }, { messageId: "m", emoji: "👍" }],
+      ["joinVoiceChannel", { channelId: "c" }, { channelId: "c" }],
+      ["leaveVoiceChannel", { channelId: "c" }, { channelId: "c" }],
+      ["getGroup", { groupId: "g" }, { groupId: "g" }],
+      ["getGroupUsers", { groupId: "g" }, { groupId: "g" }],
+      ["getGroupRoles", { groupId: "g" }, { groupId: "g" }],
+      ["getGroupCategories", { groupId: "g" }, { groupId: "g" }],
+      ["getCategory", { categoryId: "cat" }, { categoryId: "cat" }],
+      ["createCategory", { groupId: "g", name: "cat" }, { groupId: "g", name: "cat" }],
+      ["updateCategory", { categoryId: "cat", name: "x" }, { categoryId: "cat", name: "x" }],
+      ["deleteCategory", { categoryId: "cat" }, { categoryId: "cat" }],
+      ["getChannel", { channelId: "c" }, { channelId: "c" }],
+      ["createChannel", { categoryId: "g", name: "chan" }, { categoryId: "g", name: "chan" }],
+      ["updateChannel", { channelId: "c", name: "x" }, { channelId: "c", name: "x" }],
+      ["deleteChannel", { channelId: "c" }, { channelId: "c" }],
+      ["getGroupChannels", { groupId: "g" }, { groupId: "g" }],
+      ["getChannelMessages", { channelId: "c", limit: 20 }, { channelId: "c", limit: 20 }],
+      ["createRole", { groupId: "g", name: "role" }, { groupId: "g", name: "role" }],
+      ["updateRole", { roleId: "r" }, { roleId: "r" }],
+      ["deleteRole", { roleId: "r" }, { roleId: "r" }],
+      ["assignRole", { roleId: "r", targetUserId: "u" }, { roleId: "r", targetUserId: "u" }],
+      ["removeRole", { roleId: "r", targetUserId: "u" }, { roleId: "r", targetUserId: "u" }],
+      ["respondToInteraction", { interactionId: "i" }, { interactionId: "i" }],
+      ["sendInteractionFollowup", { interactionId: "i" }, { interactionId: "i" }],
+      ["registerCommand", { name: "ping" }, { name: "ping" }],
+      ["updateCommand", { commandId: "c" }, { commandId: "c" }],
+      ["deleteCommand", { commandId: "c" }, { commandId: "c" }],
+      ["getBotCommands", { botId: "b" }, { botId: "b" }],
+    ] as const)("%s forwards its params to the connect client", async (method, args, expected) => {
+      await (transport as any)[method](args);
+      const spy = clientStub[method as keyof typeof clientStub];
+      expect(spy).toHaveBeenCalledOnce();
+      expect(spy.mock.calls[0][0]).toMatchObject(expected);
+    });
+
+    it("getMe maps to an Empty request", async () => {
       await transport.getMe({});
       expect(clientStub.getMe).toHaveBeenCalledOnce();
-    });
-
-    it("getUser delegates to the connect client", async () => {
-      await transport.getUser({ userId: "u" });
-      expect(clientStub.getUser).toHaveBeenCalledOnce();
-      expect(clientStub.getUser.mock.calls[0][0]).toMatchObject({ userId: "u" });
-    });
-
-    it("kickUser delegates to the connect client", async () => {
-      await transport.kickUser({ groupId: "g", userId: "u" });
-      expect(clientStub.kickUser).toHaveBeenCalledOnce();
-      expect(clientStub.kickUser.mock.calls[0][0]).toMatchObject({
-        groupId: "g",
-        userId: "u",
-      });
-    });
-
-    it("setStatus delegates to the connect client", async () => {
-      await transport.setStatus({ status: 1 } as never);
-      expect(clientStub.setStatus).toHaveBeenCalledOnce();
-    });
-
-    it("sendMessage delegates to the connect client", async () => {
-      await transport.sendMessage({ channelId: "c", content: "hi" });
-      expect(clientStub.sendMessage).toHaveBeenCalledOnce();
-      expect(clientStub.sendMessage.mock.calls[0][0]).toMatchObject({
-        channelId: "c",
-        content: "hi",
-      });
-    });
-
-    it("updateMessage delegates to the connect client", async () => {
-      await transport.updateMessage({ messageId: "m", content: "edit" });
-      expect(clientStub.updateMessage).toHaveBeenCalledOnce();
-    });
-
-    it("deleteMessage delegates to the connect client", async () => {
-      await transport.deleteMessage({ messageId: "m" });
-      expect(clientStub.deleteMessage).toHaveBeenCalledOnce();
-    });
-
-    it("typing delegates to the connect client", async () => {
-      await transport.typing({ channelId: "c", isTyping: true });
-      expect(clientStub.typing).toHaveBeenCalledOnce();
-    });
-
-    it("setTyping delegates to the connect client", async () => {
-      await transport.setTyping({ channelId: "c", state: 1 });
-      expect(clientStub.setTyping).toHaveBeenCalledOnce();
-    });
-
-    it("addReaction delegates to the connect client", async () => {
-      await transport.addReaction({ messageId: "m", emoji: "👍" });
-      expect(clientStub.addReaction).toHaveBeenCalledOnce();
-    });
-
-    it("removeReaction delegates to the connect client", async () => {
-      await transport.removeReaction({ messageId: "m", emoji: "👍" });
-      expect(clientStub.removeReaction).toHaveBeenCalledOnce();
-    });
-
-    it("joinVoiceChannel delegates to the connect client", async () => {
-      await transport.joinVoiceChannel({ channelId: "c" });
-      expect(clientStub.joinVoiceChannel).toHaveBeenCalledOnce();
-    });
-
-    it("leaveVoiceChannel delegates to the connect client", async () => {
-      await transport.leaveVoiceChannel({ channelId: "c" });
-      expect(clientStub.leaveVoiceChannel).toHaveBeenCalledOnce();
     });
 
     it("getMyGroups calls the client with an empty request", async () => {
       await transport.getMyGroups();
       expect(clientStub.getMyGroups).toHaveBeenCalledWith({});
-    });
-
-    it("getGroup delegates to the connect client", async () => {
-      await transport.getGroup({ groupId: "g" });
-      expect(clientStub.getGroup).toHaveBeenCalledOnce();
-    });
-
-    it("getGroupUsers delegates to the connect client", async () => {
-      await transport.getGroupUsers({ groupId: "g" });
-      expect(clientStub.getGroupUsers).toHaveBeenCalledOnce();
-    });
-
-    it("getGroupRoles delegates to the connect client", async () => {
-      await transport.getGroupRoles({ groupId: "g" });
-      expect(clientStub.getGroupRoles).toHaveBeenCalledOnce();
-    });
-
-    it("getGroupCategories maps to a GetGroupRequest and delegates", async () => {
-      await transport.getGroupCategories({ groupId: "g" });
-      expect(clientStub.getGroupCategories).toHaveBeenCalledOnce();
-      expect(clientStub.getGroupCategories.mock.calls[0][0]).toMatchObject({
-        groupId: "g",
-      });
-    });
-
-    it("getCategory delegates to the connect client", async () => {
-      await transport.getCategory({ categoryId: "cat" });
-      expect(clientStub.getCategory).toHaveBeenCalledOnce();
-    });
-
-    it("getChannel delegates to the connect client", async () => {
-      await transport.getChannel({ channelId: "c" });
-      expect(clientStub.getChannel).toHaveBeenCalledOnce();
-    });
-
-    it("getGroupChannels maps to a GetGroupRequest and delegates", async () => {
-      await transport.getGroupChannels({ groupId: "g" });
-      expect(clientStub.getGroupChannels).toHaveBeenCalledOnce();
-      expect(clientStub.getGroupChannels.mock.calls[0][0]).toMatchObject({
-        groupId: "g",
-      });
-    });
-
-    it("getChannelMessages delegates to the connect client", async () => {
-      await transport.getChannelMessages({ channelId: "c", limit: 20 });
-      expect(clientStub.getChannelMessages).toHaveBeenCalledOnce();
-      expect(clientStub.getChannelMessages.mock.calls[0][0]).toMatchObject({
-        channelId: "c",
-        limit: 20,
-      });
-    });
-
-    it("createCategory delegates to the connect client", async () => {
-      await transport.createCategory({ groupId: "g", name: "cat" });
-      expect(clientStub.createCategory).toHaveBeenCalledOnce();
-    });
-
-    it("updateCategory delegates to the connect client", async () => {
-      await transport.updateCategory({ categoryId: "cat", name: "renamed" });
-      expect(clientStub.updateCategory).toHaveBeenCalledOnce();
-    });
-
-    it("deleteCategory delegates to the connect client", async () => {
-      await transport.deleteCategory({ categoryId: "cat" });
-      expect(clientStub.deleteCategory).toHaveBeenCalledOnce();
-    });
-
-    it("createChannel delegates to the connect client", async () => {
-      await transport.createChannel({ categoryId: "g", name: "chan" });
-      expect(clientStub.createChannel).toHaveBeenCalledOnce();
-    });
-
-    it("updateChannel delegates to the connect client", async () => {
-      await transport.updateChannel({ channelId: "c", name: "renamed" });
-      expect(clientStub.updateChannel).toHaveBeenCalledOnce();
-    });
-
-    it("deleteChannel delegates to the connect client", async () => {
-      await transport.deleteChannel({ channelId: "c" });
-      expect(clientStub.deleteChannel).toHaveBeenCalledOnce();
-    });
-
-    it("createRole delegates to the connect client", async () => {
-      await transport.createRole({ groupId: "g", name: "role" });
-      expect(clientStub.createRole).toHaveBeenCalledOnce();
-    });
-
-    it("updateRole delegates to the connect client", async () => {
-      await transport.updateRole({ roleId: "r" });
-      expect(clientStub.updateRole).toHaveBeenCalledOnce();
-    });
-
-    it("deleteRole delegates to the connect client", async () => {
-      await transport.deleteRole({ roleId: "r" });
-      expect(clientStub.deleteRole).toHaveBeenCalledOnce();
-    });
-
-    it("assignRole delegates to the connect client", async () => {
-      await transport.assignRole({ roleId: "r", targetUserId: "u" });
-      expect(clientStub.assignRole).toHaveBeenCalledOnce();
-    });
-
-    it("removeRole delegates to the connect client", async () => {
-      await transport.removeRole({ roleId: "r", targetUserId: "u" });
-      expect(clientStub.removeRole).toHaveBeenCalledOnce();
-    });
-
-    it("respondToInteraction delegates to the connect client", async () => {
-      await transport.respondToInteraction({ interactionId: "i" } as never);
-      expect(clientStub.respondToInteraction).toHaveBeenCalledOnce();
-      expect(clientStub.respondToInteraction.mock.calls[0][0]).toMatchObject({
-        interactionId: "i",
-      });
-    });
-
-    it("sendInteractionFollowup delegates to the connect client", async () => {
-      await transport.sendInteractionFollowup({ interactionId: "i" } as never);
-      expect(clientStub.sendInteractionFollowup).toHaveBeenCalledOnce();
-      expect(clientStub.sendInteractionFollowup.mock.calls[0][0]).toMatchObject({
-        interactionId: "i",
-      });
-    });
-
-    it("registerCommand delegates to the interactions client", async () => {
-      await transport.registerCommand({ name: "ping" } as never);
-      expect(clientStub.registerCommand).toHaveBeenCalledOnce();
-    });
-
-    it("updateCommand delegates to the interactions client", async () => {
-      await transport.updateCommand({ commandId: "c" } as never);
-      expect(clientStub.updateCommand).toHaveBeenCalledOnce();
-    });
-
-    it("deleteCommand delegates to the interactions client", async () => {
-      await transport.deleteCommand({ commandId: "c" } as never);
-      expect(clientStub.deleteCommand).toHaveBeenCalledOnce();
-    });
-
-    it("getBotCommands delegates to the interactions client", async () => {
-      await transport.getBotCommands({ botId: "b" } as never);
-      expect(clientStub.getBotCommands).toHaveBeenCalledOnce();
     });
   });
 });

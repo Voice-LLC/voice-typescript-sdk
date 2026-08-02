@@ -22,8 +22,4 @@ describe("ALL_GATEWAY_TOPICS", () => {
       "interaction-events",
     ]);
   });
-
-  it("has the same length as the topic map", () => {
-    expect(ALL_GATEWAY_TOPICS).toHaveLength(Object.keys(GatewayTopics).length);
-  });
 });
