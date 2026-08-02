@@ -19,7 +19,7 @@ export default defineConfig({
       formats: ["es"],
     },
     rollupOptions: {
-      external: [/^@bufbuild\//, /^@connectrpc\//, '@microsoft/signalr', /^node:/],
+      external: [/^@bufbuild\//, /^@connectrpc\//, "@microsoft/signalr", /^node:/],
     },
   },
 });

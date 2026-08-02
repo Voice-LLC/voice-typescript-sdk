@@ -1,19 +1,24 @@
 {
-  "name": "@voice/client",
+  "name": "@scondic/voice-client",
   "version": "0.0.1",
   "description": "SDK client for Voice bots in TypeScript",
+  "keywords": [
+    "voice"
+  ],
+  "homepage": "https://github.com/Voice-LLC/voice-typescript-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/Voice-LLC/voice-typescript-sdk/issues"
+  },
   "license": "MIT",
   "author": "Scondic <scondic@icloud.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/myorg/voice-client.git"
   },
-  "homepage": "https://github.com/Voice-LLC/voice-typescript-sdk#readme",
-  "bugs": {
-    "url": "https://github.com/Voice-LLC/voice-typescript-sdk/issues"
-  },
-  "keywords": [
-    "voice"
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "type": "module",
   "sideEffects": false,
@@ -26,14 +31,6 @@
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "engines": {
-    "node": ">=22"
   },
   "publishConfig": {
     "access": "public"
@@ -72,5 +69,8 @@
     "vite": "^8.0.1",
     "vite-plugin-dts": "^5.0.3",
     "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
