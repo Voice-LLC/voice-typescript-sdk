@@ -1,6 +1,6 @@
 {
   "name": "@scondic/voice-client",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "SDK client for Voice bots in TypeScript",
   "keywords": [
     "voice"
