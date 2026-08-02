@@ -7,18 +7,19 @@ export default defineConfig({
       tsconfigPath: "./tsconfig.json",
       include: ["src"],
       insertTypesEntry: true,
+      bundleTypes: true,
     }),
   ],
   build: {
-    target: "node20",
+    target: "node22",
     lib: {
       entry: "src/index.ts",
       name: "VoiceClient",
       fileName: "index",
-      formats: ["es", "cjs"],
+      formats: ["es"],
     },
     rollupOptions: {
-      external: (id) => !id.startsWith(".") && !id.startsWith("/"),
+      external: [/^@bufbuild\//, /^@connectrpc\//, '@microsoft/signalr', /^node:/],
     },
   },
 });

@@ -1,17 +1,42 @@
 {
   "name": "@voice/client",
-  "version": "1.0.0",
-  "private": true,
+  "version": "0.0.1",
+  "description": "SDK client for Voice bots in TypeScript",
+  "license": "MIT",
+  "author": "Scondic <scondic@icloud.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/myorg/voice-client.git"
+  },
+  "homepage": "https://github.com/Voice-LLC/voice-typescript-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/Voice-LLC/voice-typescript-sdk/issues"
+  },
+  "keywords": [
+    "voice"
+  ],
   "type": "module",
-  "main": "./dist/index.cjs",
+  "sideEffects": false,
+  "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "vite",
@@ -38,6 +63,7 @@
   "devDependencies": {
     "@bufbuild/buf": "^1.72.0",
     "@bufbuild/protoc-gen-es": "^2.13.0",
+    "@microsoft/api-extractor": "^7.58.12",
     "@vitest/coverage-v8": "4.1.10",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
