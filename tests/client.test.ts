@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FakeGateway } from "./helpers/fake-gateway";
-import { createFakeTransport, createUpdate } from "./helpers/fake-transport";
+import {
+  createFakeTransport,
+  createInteractionUpdate,
+  createUpdate,
+} from "./helpers/fake-transport";
 
 import { Client, createClient } from "../src";
 import type { UpdateContext } from "../src/context";
 import { Context } from "../src/context";
+import { InteractionType } from "../src/events";
 import type { Transport } from "../src/transport";
 
 const options = { token: "tok", baseUrl: "https://api.voice.dev" };
@@ -128,6 +133,101 @@ describe("Client", () => {
 
       expect(a).toHaveBeenCalledOnce();
       expect(b).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe("interaction matchers", () => {
+    beforeEach(async () => {
+      await client.init();
+    });
+
+    it("command matches on interaction type and command name", async () => {
+      const handler = vi.fn();
+      const other = vi.fn();
+      client.command("ping", handler);
+
+      await gateway.updateHandler!(
+        createInteractionUpdate({
+          type: InteractionType.ApplicationCommand,
+          data: { commandName: "ping" },
+        }),
+      );
+      await gateway.updateHandler!(
+        createInteractionUpdate({
+          type: InteractionType.ApplicationCommand,
+          data: { commandName: "pong" },
+        }),
+      );
+
+      expect(handler).toHaveBeenCalledOnce();
+      expect(other).not.toHaveBeenCalled();
+    });
+
+    it("component matches on interaction type and customId pattern", async () => {
+      const handler = vi.fn();
+      client.component("pick-*", handler);
+
+      await gateway.updateHandler!(
+        createInteractionUpdate({
+          type: InteractionType.MessageComponent,
+          data: { customId: "pick-apple" },
+        }),
+      );
+      await gateway.updateHandler!(
+        createInteractionUpdate({
+          type: InteractionType.MessageComponent,
+          data: { customId: "drop-apple" },
+        }),
+      );
+
+      expect(handler).toHaveBeenCalledOnce();
+    });
+
+    it("modal matches on interaction type and customId pattern", async () => {
+      const handler = vi.fn();
+      client.modal("form-*", handler);
+
+      await gateway.updateHandler!(
+        createInteractionUpdate({
+          type: InteractionType.ModalSubmit,
+          data: { customId: "form-signup" },
+        }),
+      );
+      await gateway.updateHandler!(
+        createInteractionUpdate({
+          type: InteractionType.MessageComponent,
+          data: { customId: "form-signup" },
+        }),
+      );
+
+      expect(handler).toHaveBeenCalledOnce();
+    });
+
+    it("autocomplete matches on interaction type and command name", async () => {
+      const handler = vi.fn();
+      client.autocomplete("search", handler);
+
+      await gateway.updateHandler!(
+        createInteractionUpdate({
+          type: InteractionType.ApplicationCommandAutocomplete,
+          data: { commandName: "search" },
+        }),
+      );
+      await gateway.updateHandler!(
+        createInteractionUpdate({
+          type: InteractionType.ApplicationCommandAutocomplete,
+          data: { commandName: "other" },
+        }),
+      );
+
+      expect(handler).toHaveBeenCalledOnce();
+    });
+
+    it("returns the client instance for fluent chaining", () => {
+      expect(client.command("x", () => {})).toBe(client);
+      expect(client.component("x", () => {})).toBe(client);
+      expect(client.modal("x", () => {})).toBe(client);
+      expect(client.autocomplete("x", () => {})).toBe(client);
     });
   });
 

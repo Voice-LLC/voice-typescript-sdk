@@ -33,6 +33,11 @@ describe("Context", () => {
       expect(ctx.text).toBe("hello world");
     });
 
+    it("returns an empty string for `text` when there is no message", () => {
+      const interaction = new Context(createInteractionUpdate(), transport);
+      expect(interaction.text).toBe("");
+    });
+
     it("exposes the message id", () => {
       expect(ctx.messageId).toBe("msg-1");
     });
@@ -110,6 +115,106 @@ describe("Context", () => {
       const plain = new Context(createUpdate(), transport);
       expect(plain.isInteraction).toBe(false);
       expect(plain.interactionId).toBeNull();
+    });
+
+    it("returns null/empty defaults for every interaction getter on a plain message", () => {
+      expect(ctx.interactionCommandName).toBeNull();
+      expect(ctx.interactionCustomId).toBeNull();
+      expect(ctx.interactionType).toBeNull();
+      expect(ctx.interactionUserId).toBeNull();
+      expect(ctx.interactionValues).toEqual([]);
+    });
+
+    it("exposes the raw interaction data payload", () => {
+      const interaction = new Context(
+        createInteractionUpdate({ data: { commandName: "ping" } }),
+        transport,
+      );
+      expect(interaction.interaction?.commandName).toBe("ping");
+    });
+
+    it("returns null interaction data for a plain message", () => {
+      expect(ctx.interaction).toBeNull();
+    });
+
+    it("falls back to the message channel id when there is no interaction", () => {
+      expect(ctx.channelId).toBe("chan-1");
+    });
+
+    it("prefers the interaction channel id when present", () => {
+      const interaction = new Context(
+        createInteractionUpdate({ channelId: "int-chan" }),
+        transport,
+      );
+      expect(interaction.channelId).toBe("int-chan");
+    });
+  });
+
+  describe("componentsJson", () => {
+    it("exposes the raw components JSON when present", () => {
+      const withComponents = new Context(createUpdate({ componentsJson: '{"type":1}' }), transport);
+      expect(withComponents.componentsJson).toBe('{"type":1}');
+    });
+
+    it("returns null when the message has no components", () => {
+      expect(ctx.componentsJson).toBeNull();
+    });
+
+    it("returns null for an interaction update with no message", () => {
+      const interaction = new Context(createInteractionUpdate(), transport);
+      expect(interaction.componentsJson).toBeNull();
+    });
+  });
+
+  describe("message-only accessors on an interaction update", () => {
+    it("throws because the message is unavailable", () => {
+      const interaction = new Context(createInteractionUpdate(), transport);
+      expect(() => interaction.messageId).toThrow(/message.*недоступно/);
+      expect(() => interaction.author).toThrow(/message.*недоступно/);
+    });
+  });
+
+  describe("respondToInteraction", () => {
+    it("forwards the current interaction id and params", async () => {
+      const interaction = new Context(
+        createInteractionUpdate({ interactionId: "int-9" }),
+        transport,
+      );
+      await interaction.respondToInteraction({ content: "pong" } as never);
+      expect(transport.respondToInteraction).toHaveBeenCalledWith({
+        interactionId: "int-9",
+        content: "pong",
+      });
+    });
+
+    it("defaults the interaction id to an empty string for a plain message", async () => {
+      await ctx.respondToInteraction({ content: "pong" } as never);
+      expect(transport.respondToInteraction).toHaveBeenCalledWith({
+        interactionId: "",
+        content: "pong",
+      });
+    });
+  });
+
+  describe("sendInteractionFollowup", () => {
+    it("forwards the current interaction id and params", async () => {
+      const interaction = new Context(
+        createInteractionUpdate({ interactionId: "int-9" }),
+        transport,
+      );
+      await interaction.sendInteractionFollowup({ content: "more" } as never);
+      expect(transport.sendInteractionFollowup).toHaveBeenCalledWith({
+        interactionId: "int-9",
+        content: "more",
+      });
+    });
+
+    it("defaults the interaction id to an empty string for a plain message", async () => {
+      await ctx.sendInteractionFollowup({ content: "more" } as never);
+      expect(transport.sendInteractionFollowup).toHaveBeenCalledWith({
+        interactionId: "",
+        content: "more",
+      });
     });
   });
 

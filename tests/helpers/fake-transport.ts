@@ -24,6 +24,13 @@ export function createFakeTransport(): Transport {
     // Voice
     joinVoiceChannel: echo(),
     leaveVoiceChannel: echo(),
+    // Interactions & commands
+    respondToInteraction: echo(),
+    sendInteractionFollowup: echo(),
+    registerCommand: echo(),
+    updateCommand: echo(),
+    deleteCommand: echo(),
+    getBotCommands: echo(),
     // Groups
     getMyGroups: echo(),
     getGroup: echo(),

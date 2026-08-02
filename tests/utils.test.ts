@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { camelizeKeys, createClientConfigOptions, createGatewayUrl, parseJson } from "../src/utils";
+import {
+  camelizeKeys,
+  createClientConfigOptions,
+  createGatewayUrl,
+  matchesCustomId,
+  parseJson,
+} from "../src/utils";
 
 describe("createClientConfigOptions", () => {
   it("normalizes a bare token string into an options object", () => {
@@ -69,6 +75,31 @@ describe("camelizeKeys", () => {
 
   it("leaves already-camelCased keys intact", () => {
     expect(camelizeKeys({ channelId: "1" })).toEqual({ channelId: "1" });
+  });
+});
+
+describe("matchesCustomId", () => {
+  it("returns false when the customId is null", () => {
+    expect(matchesCustomId("pick", null)).toBe(false);
+  });
+
+  it("returns false when the customId is an empty string", () => {
+    expect(matchesCustomId("pick", "")).toBe(false);
+  });
+
+  it("matches exactly when the pattern has no wildcard", () => {
+    expect(matchesCustomId("pick-fruit", "pick-fruit")).toBe(true);
+    expect(matchesCustomId("pick-fruit", "pick-veg")).toBe(false);
+  });
+
+  it("matches by prefix when the pattern ends with a wildcard", () => {
+    expect(matchesCustomId("pick-*", "pick-apple")).toBe(true);
+    expect(matchesCustomId("pick-*", "pick-")).toBe(true);
+    expect(matchesCustomId("pick-*", "drop-apple")).toBe(false);
+  });
+
+  it("treats a bare wildcard as matching any non-empty customId", () => {
+    expect(matchesCustomId("*", "anything")).toBe(true);
   });
 });
 

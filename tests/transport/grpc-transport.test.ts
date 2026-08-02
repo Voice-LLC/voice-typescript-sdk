@@ -34,6 +34,12 @@ const clientStub = {
   deleteRole: vi.fn(async (m: unknown) => m),
   assignRole: vi.fn(async (m: unknown) => m),
   removeRole: vi.fn(async (m: unknown) => m),
+  respondToInteraction: vi.fn(async (m: unknown) => m),
+  sendInteractionFollowup: vi.fn(async (m: unknown) => m),
+  registerCommand: vi.fn(async (m: unknown) => m),
+  updateCommand: vi.fn(async (m: unknown) => m),
+  deleteCommand: vi.fn(async (m: unknown) => m),
+  getBotCommands: vi.fn(async (m: unknown) => m),
 };
 
 const createGrpcTransport = vi.fn((opts: unknown) => opts);
@@ -282,6 +288,42 @@ describe("GrpcBotsTransport", () => {
     it("removeRole delegates to the connect client", async () => {
       await transport.removeRole({ roleId: "r", targetUserId: "u" });
       expect(clientStub.removeRole).toHaveBeenCalledOnce();
+    });
+
+    it("respondToInteraction delegates to the connect client", async () => {
+      await transport.respondToInteraction({ interactionId: "i" } as never);
+      expect(clientStub.respondToInteraction).toHaveBeenCalledOnce();
+      expect(clientStub.respondToInteraction.mock.calls[0][0]).toMatchObject({
+        interactionId: "i",
+      });
+    });
+
+    it("sendInteractionFollowup delegates to the connect client", async () => {
+      await transport.sendInteractionFollowup({ interactionId: "i" } as never);
+      expect(clientStub.sendInteractionFollowup).toHaveBeenCalledOnce();
+      expect(clientStub.sendInteractionFollowup.mock.calls[0][0]).toMatchObject({
+        interactionId: "i",
+      });
+    });
+
+    it("registerCommand delegates to the interactions client", async () => {
+      await transport.registerCommand({ name: "ping" } as never);
+      expect(clientStub.registerCommand).toHaveBeenCalledOnce();
+    });
+
+    it("updateCommand delegates to the interactions client", async () => {
+      await transport.updateCommand({ commandId: "c" } as never);
+      expect(clientStub.updateCommand).toHaveBeenCalledOnce();
+    });
+
+    it("deleteCommand delegates to the interactions client", async () => {
+      await transport.deleteCommand({ commandId: "c" } as never);
+      expect(clientStub.deleteCommand).toHaveBeenCalledOnce();
+    });
+
+    it("getBotCommands delegates to the interactions client", async () => {
+      await transport.getBotCommands({ botId: "b" } as never);
+      expect(clientStub.getBotCommands).toHaveBeenCalledOnce();
     });
   });
 });
