@@ -1,6 +1,6 @@
 {
-  "name": "@scondic/voice-client",
-  "version": "0.0.3",
+  "name": "@voice-app/client",
+  "version": "0.0.1",
   "description": "SDK client for Voice bots in TypeScript",
   "keywords": [
     "voice"
@@ -9,7 +9,7 @@
   "bugs": {
     "url": "https://github.com/Voice-LLC/voice-typescript-sdk/issues"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Scondic <scondic@icloud.com>",
   "repository": {
     "type": "git",
